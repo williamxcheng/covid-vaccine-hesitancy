@@ -1,0 +1,28 @@
+---
+title: "2-train-test-split"
+output:
+  pdf_document: default
+  html_notebook: default
+---
+
+```{r}
+library(kableExtra)                     # for printing tables
+library(tidyverse)                      # for everything else
+
+vh_data = read_tsv("../data/clean/vh_data.tsv")
+
+# split into train and test data
+set.seed(2) # seed set for reproducibility (DO NOT CHANGE)
+n = nrow(vh_data)
+train_samples = sample(1:n, round(0.8*n))
+vh_data
+vh_train <- 
+  vh_data[train_samples, ]
+vh_test <- 
+  vh_data[-train_samples, ]
+
+# save the train and test data
+write_tsv(x = vh_train, file = "../data/clean/vh_train.tsv")
+write_tsv(x = vh_test, file = "../data/clean/vh_test.tsv")
+```
+

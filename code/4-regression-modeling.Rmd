@@ -1,0 +1,183 @@
+---
+title: "4-regression-modeling"
+output:
+  pdf_document: default
+  html_notebook: default
+---
+```{r}
+# load libraries
+library(kableExtra)                     # for printing tables
+library(cowplot)                        # for side by side plots
+library(glmnetUtils)                    # to run ridge and lasso
+library(tidyverse)                      # for everything else
+library(naniar)                         # for replace NA 
+library(rpart)
+library(rpart.plot)
+library(randomForest)
+library(gbm)
+library(tidyverse)
+library(nnet)
+library(pROC)
+library(creditmodel)
+source("../code/functions/plot_glmnet.R")            # for lasso/ridge trace plots
+
+# read in the training data
+vh_train = read_tsv("../data/clean/vh_train.tsv")
+
+cols = c("region", "hispanic", "race", "education_level", "marital_status", 
+         "birth_gender", "described_gender", "sexual_orientation", 
+         "number_kids_household", "number_adults_household", "had_covid", 
+         "recent_work_loss", "employment", "child_tax_credit", 
+         "difficulty_with_expenses", "work_onsite", "work_from_home", 
+         "in_store_shopping", "eating_indoors_restaurants", 
+         "in_person_medical_appointments", "in_home_housekeeping", 
+         "household_food_sufficiency", "household_free_food", "snap_receipt",
+         "anxious", "worry", "interest", "depressed", 
+         "prescription_mental_health", "mental_health_services", 
+         "mental_health_not_get", "private_health_insurance", 
+         "public_health_insurance", "telehealth_personal", "telehealth_child",
+         "child_missed_checkups", "seeing_limitations", "hearing_limitations", 
+         "remembering_limitations", "mobility_limitations", 
+         "housing_owned_rented", "building_type", "rent_caught_up", 
+         "mortgage_caught_up", "housing_pay_confidence", 
+         "rent_assistance_apply", "eviction_likelihood", "foreclose_likelihood",
+         "energy_pay_trouble", "housing_unsafe_temp", "income", "kids", 
+         "active_duty", "essential_worker", "pandemic_child_impact", 
+         "summer_educational_catch_up", "post_sec_edu_plan_changes", 
+         "children_public_school", "children_private_school", 
+         "children_homeschool", "post_secondary_classes", "vaccine_hesitancy"
+         )
+  
+vh_train <-
+  vh_train %>%
+       mutate_each_(funs(factor(.)), cols)
+
+# run logistic regression
+set.seed(1)
+glm_fit = glm(vaccine_hesitancy ~.,
+              family = "binomial",
+              data = vh_train)
+
+# save the logistic fit object
+save(glm_fit, file = "../results/glm_fit.Rda")
+
+# extract features selected by logistic fit and their coefficients
+# beta_hat_std = extract_std_coefs(glm_fit, vh_train)
+# beta_hat_std %>%
+#   filter(coefficient != 0) %>%
+#   arrange(desc(abs(coefficient))) %>% 
+#   write_tsv("../results/logistic-features-table.tsv")
+
+# run ridge regression
+set.seed(1)
+ridge_fit = cv.glmnet(vaccine_hesitancy ~.,
+                      alpha = 0,
+                      nfolds = 10,
+                      family = "binomial",
+                      type.measure = "class",
+                      data = vh_train)
+
+# save the ridge fit object
+save(ridge_fit, file = "../results/ridge_fit.Rda")
+
+# create ridge CV plot
+png(width = 6, 
+    height = 4,
+    res = 300,
+    units = "in", 
+    filename = "../results/ridge-cv-plot.png")
+plot(ridge_fit)
+dev.off()
+
+# create ridge trace plot
+p = plot_glmnet(ridge_fit, vh_train, features_to_plot = 6)
+ggsave(filename = "../results/ridge-trace-plot.png", 
+       plot = p, 
+       device = "png", 
+       width = 6, 
+       height = 4)
+
+# extract features selected by ridge and their coefficients
+beta_hat_std = extract_std_coefs(ridge_fit, vh_train)
+beta_hat_std %>%
+  filter(coefficient != 0) %>%
+  arrange(desc(abs(coefficient))) %>% 
+  head(10) %>%
+  write_tsv("../results/ridge-features-table.tsv")
+
+# run lasso regression
+set.seed(1)
+lasso_fit = cv.glmnet(vaccine_hesitancy ~.,
+                      alpha = 1,
+                      nfolds = 10,
+                      family = "binomial",
+                      type.measure = "class",
+                      data = vh_train)
+
+# save the lasso fit object
+save(lasso_fit, file = "../results/lasso_fit.Rda")
+
+# create lasso CV plot
+png(width = 6, 
+    height = 4,
+    res = 300,
+    units = "in", 
+    filename = "../results/lasso-cv-plot.png")
+plot(lasso_fit)
+dev.off()
+
+# create lasso trace plot
+p = plot_glmnet(lasso_fit, vh_train, features_to_plot = 6)
+ggsave(filename = "../results/lasso-trace-plot.png", 
+       plot = p, 
+       device = "png", 
+       width = 6, 
+       height = 4)
+
+# extract features selected by lasso and their coefficients
+beta_hat_std = extract_std_coefs(lasso_fit, vh_train)
+beta_hat_std %>%
+  filter(coefficient != 0) %>%
+  arrange(desc(abs(coefficient))) %>% 
+  head(10) %>%
+  write_tsv("../results/lasso-features-table.tsv")
+
+# run elastic net regression
+elnet_fit = cva.glmnet(vaccine_hesitancy ~ ., # formula notation, as usual 
+                       nfolds = 10, # number of folds
+                       family = "binomial",
+                       type.measure = "class",
+                       data = vh_train) # data to run on
+
+# save the elastic net fit object
+save(elnet_fit, file = "../results/elnet_fit.Rda")
+
+# extract best elastic net fit
+elnet_fit_best = extract_best_elnet(elnet_fit)
+
+# create elastic net CV plot
+png(width = 6, 
+    height = 4,
+    res = 300,
+    units = "in", 
+    filename = "../results/elnet-cv-plot.png")
+plot(elnet_fit_best)
+dev.off()
+
+# create elastic net trace plot
+p = plot_glmnet(elnet_fit_best, vh_train, features_to_plot = 6)
+ggsave(filename = "../results/elnet-trace-plot.png", 
+       plot = p, 
+       device = "png", 
+       width = 6, 
+       height = 4)
+
+# extract features selected by elastic net fit and their coefficients
+beta_hat_std = extract_std_coefs(elnet_fit_best, vh_train)
+beta_hat_std %>%
+  filter(coefficient != 0) %>%
+  arrange(desc(abs(coefficient))) %>% 
+  head(10) %>%
+  write_tsv("../results/elnet-features-table.tsv")
+```
+

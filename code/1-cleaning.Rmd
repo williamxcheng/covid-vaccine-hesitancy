@@ -1,0 +1,246 @@
+---
+title: "1-cleaning"
+output:
+  pdf_document: default
+  html_notebook: default
+---
+
+```{r, message = FALSE}
+library(kableExtra)                     # for printing tables
+library(cowplot)                        # for side by side plots
+library(glmnetUtils)                    # to run ridge and lasso
+library(tidyverse)                      # for everything else
+library(naniar)                         # for replace NA 
+library(rpart)
+library(rpart.plot)
+library(randomForest)
+library(gbm)
+library(tidyverse)
+library(nnet)
+library(pROC)
+library(creditmodel)
+```
+
+```{r}
+# load raw case data
+vh_data_raw = read_tsv(file = "../data/raw/vh_data_raw.tsv")
+```
+
+
+```{r}
+vh_data <-
+  vh_data_raw %>%
+  mutate(KIDS = if_else(KIDS_LT5Y == 1 | KIDS_5_11Y == 1 | KIDS_12_17Y == 1, 1, 
+                             if_else(KIDS_LT5Y == -99 & KIDS_5_11Y == -99 & 
+                                       KIDS_12_17Y == -99, 0, -88))) %>%
+  mutate(ACTVDUTY = if_else(ACTVDUTY1 == 1, 2, 
+                            ifelse(ACTVDUTY2 == 1 | ACTVDUTY3 == 1 |
+                                     ACTVDUTY4 == 1 | ACTVDUTY5 == 1, 1, 
+                                   ifelse(ACTVDUTY1 == -99 & ACTVDUTY2 == -99 
+                                          & ACTVDUTY3 == -99 & ACTVDUTY4 == -99 
+                                          & ACTVDUTY5 == -99, -99, -88)))) %>%
+  mutate(ESSENTIAL = if_else(WKVOL == 2, 2, 
+                        ifelse(SETTING == 1 | SETTING == 2 | SETTING == 3| 
+                                 SETTING == 4 | SETTING == 5 | SETTING == 6 |
+                                 SETTING == 7 | SETTING == 8 | SETTING == 9 | 
+                                 SETTING == 10 | SETTING == 11 | SETTING == 12 |
+                                 SETTING == 13 | SETTING == 14 | SETTING == 15 | 
+                                 SETTING == 15 | SETTING == 16 | SETTING == 17 | 
+                                 SETTING == 18| SETTING == 19, 1, 
+                               ifelse(WKVOL == -99 & SETTING == -99, 
+                               -99, -88)))) %>%
+  mutate(CHLDIMPCT = ifelse(CHLDCARE == 2 | CHLDCARE == 3 | CHLDIMPCT9 == 1, 2, 
+                            ifelse(CHLDIMPCT1 == 1 | CHLDIMPCT2 == 1 | 
+                                     CHLDIMPCT3 == 1 | CHLDIMPCT4 == 1 | 
+                                     CHLDIMPCT5 == 1 | CHLDIMPCT6 == 1 | 
+                                     CHLDIMPCT7 == 1 | CHLDIMPCT8 == 1, 1,
+                                   ifelse(CHLDCARE == -99 & CHLDIMPCT1 == -99 &
+                                          CHLDIMPCT2 == -99 & 
+                                            CHLDIMPCT3 == -99 & 
+                                            CHLDIMPCT4 == -99 & 
+                                            CHLDIMPCT5 == -99 &
+                                            CHLDIMPCT6 == -99 & 
+                                            CHLDIMPCT7 == -99 &
+                                            CHLDIMPCT8 == -99 & 
+                                            CHLDIMPCT9 == -99, -99, -88)))) %>%
+  mutate(SUMMER_ED = ifelse(SUMMER_ED1 == 1 | SUMMER_ED2 == 1 | SUMMER_ED3 == 1, 
+                            SUMMER_ED4 == 1 |  1, 
+                            ifelse(SUMMER_ED1 == -99 & 
+                                   SUMMER_ED2 == -99 &
+                                   SUMMER_ED3 == -99 &
+                                   SUMMER_ED4 == -99, 2, -88))) %>%
+  mutate(PSCHNG = ifelse(PSCHNG2 == 1 | PSCHNG3 == 1 | PSCHNG4 == 1 | 
+                         PSCHNG5 == 1 | PSCHNG6 == 1 | PSCHNG7 == 1, 1, 
+                         ifelse(PSCHNG1 == 0, 2, 
+                                ifelse(PSCHNG1 == -99 & PSCHNG2 == -99 & 
+                                       PSCHNG3 == -99 & PSCHNG4 == -99 & 
+                                       PSCHNG5 == -99 & PSCHNG6 == -99 & 
+                                       PSCHNG7 == -99, -99, -88)))) %>%
+  mutate(ENROLLPUB = ifelse(TENROLLPUB > 0, 1, 
+                            ifelse(TENROLLPUB == -99 | TENROLLPUB == 0, 
+                                   2, -88))) %>%
+  mutate(ENROLLPRIV = ifelse(TENROLLPRV > 0, 1, 
+                            ifelse(TENROLLPRV == -99 | TENROLLPRV == 0, 
+                                   2, -88))) %>%
+  mutate(ENROLLHMSCH = ifelse(TENROLLHMSCH > 0, 1, 
+                            ifelse(TENROLLHMSCH == -99 | TENROLLHMSCH == 0, 
+                                   2, -88))) %>%
+  mutate(PS_YN = ifelse(TNUM_PS > 0, 1, 
+                            ifelse(TNUM_PS == -99 | TNUM_PS == 0, 
+                                   2, -88))) %>%
+  mutate(VHESITANT = if_else(GETVACRV == 3 | 
+                               GETVACRV == 4 | 
+                               GETVACRV == 5, 1, 
+                            if_else(GETVACRV == 1 | 
+                                    GETVACRV == 2 | 
+                                    RECVDVACC == 1, 0, 
+                                    if_else(RECVDVACC == 2 & 
+                                              GETVACRV == -88, 1, NA_real_)))) %>%
+  mutate(AGE = 2021 - TBIRTH_YEAR) %>%
+  mutate(INCOME = INCOME) %>%
+  select(-SCRAM, -WEEK, -EST_MSA, -ABIRTH_YEAR, -AGENID_BIRTH, 
+         -TBIRTH_YEAR, -AHISPANIC, -ARACE, -AEDUC, -AHHLD_NUMPER, -AHHLD_NUMKID,
+         -THHLD_NUMPER, -KIDS_LT5Y, -KIDS_5_11Y, -KIDS_12_17Y, -ENRPUBCHK, 
+         -ENRPRVCHK, -ENRHMSCHK, -TENROLLPUB, -TENROLLPRV, -TENROLLHMSCH, 
+         -ENROLLNONE, -ACTVDUTY1, -ACTVDUTY2, -ACTVDUTY3, -ACTVDUTY4, -ACTVDUTY5,
+         -KINDWORK, -RSNNOWRKRV, -WKVOL, -SETTING, -CHLDCARE, -CHLDIMPCT1, 
+         -CHLDIMPCT2, -CHLDIMPCT3, -CHLDIMPCT4, -CHLDIMPCT5, -CHLDIMPCT6, 
+         -CHLDIMPCT7, -CHLDIMPCT8, -CHLDIMPCT9, -CTC_USE, -CTCSPND1, -CTCSPND2, 
+         -CTCSPND3, -CTCSPND4, -CTCSPND5, -CTCSPND6, -CTCSPND7, -CTCSPND8, 
+         -CTCSPND9, -CTCSPND10, -CTCSPND11, -CTCSPND12, -CTCSPND13, -CTCSPND14, 
+         -CTCSPND15, -CTCSPND16, -CTCSPND17,-SPND_SRC1, -SPND_SRC2, -SPND_SRC3, 
+         -SPND_SRC4, -SPND_SRC5,
+         -SPND_SRC6, -SPND_SRC7, -SPND_SRC8, -SPND_SRC9, -SPND_SRC9, 
+         -SPND_SRC10,-SPND_SRC11, -SPND_SRC12, -CHILDFOOD, -FOODRSNRV1, 
+         -FOODRSNRV2, -FOODRSNRV3, -FOODRSNRV4, -SCHLFDHLP1, -SCHLFDHLP2,
+         -SCHLFDHLP3, -SCHLFDHLP4, -NOSCHLFDHLP, -HLTHINS1, -HLTHINS2, 
+         -HLTHINS3, -HLTHINS4, -HLTHINS5, -HLTHINS6, -HLTHINS7, -HLTHINS8,
+         -TH_ADLT_PHON, -TH_ADLT_VID,
+         -TH_CHLD_PHON, -TH_CHLD_VID, -SUMMER_ED1, -SUMMER_ED2, -SUMMER_ED3, 
+         -SUMMER_ED4, -PSCHNG1, -PSCHNG2, -PSCHNG3, -PSCHNG4, -PSCHNG5, -PSCHNG6,
+         -PSCHNG7, -PSWHYCHG1, -PSWHYCHG2, -PSWHYCHG3, -PSWHYCHG4, -PSWHYCHG5,
+         -PSWHYCHG6, -PSWHYCHG7, -PSWHYCHG8, -PSWHYCHG9,
+         -WHYNORV1, -WHYNORV2, -WHYNORV3, -WHYNORV4, -WHYNORV5, -WHYNORV6,
+         -WHYNORV7, -WHYNORV8, -WHYNORV9,-WHYNORV10, -WHYNORV11, -WHYNORV12,
+         -WHYNORV13, -KIDWHYNO1, -KIDWHYNO2, -KIDWHYNO3, -KIDWHYNO4, -KIDWHYNO5, 
+         -KIDWHYNO6, -KIDWHYNO7, -KIDWHYNO8, -KIDWHYNO9, -KIDWHYNO10, 
+         -KIDWHYNO11, -KIDWHYNO12, -KIDWHYNO13, -KIDWHYNO14, -KIDDOSES, 
+         -KIDGETVAC, -PWEIGHT, -HWEIGHT, -TNUM_PS, -TMNTHSBHND, -RECVDVACC, 
+         -DOSESRV, -ENRGY_BILL, -GETVACRV, -EST_ST) %>% 
+  filter(INCOME != -88) %>%
+  rename(region = REGION, 
+    #state = EST_ST,
+       hispanic = RHISPANIC, 
+       race = RRACE, 
+       education_level = EEDUC, 
+       marital_status = MS,
+       birth_gender = EGENID_BIRTH,
+       described_gender = GENID_DESCRIBE,
+       sexual_orientation = SEXUAL_ORIENTATION,
+       number_kids_household = THHLD_NUMKID,
+       number_adults_household = THHLD_NUMADLT,
+       vaccine_hesitancy = VHESITANT,
+       had_covid = HADCOVID,
+       recent_work_loss = WRKLOSSRV,
+       employment = ANYWORK, 
+       child_tax_credit = CTC_YN,
+       difficulty_with_expenses = EXPNS_DIF,
+       work_onsite = ACTIVITY1,
+       work_from_home = ACTIVITY2,
+       in_store_shopping = ACTIVITY3,
+       eating_indoors_restaurants = ACTIVITY4,
+       in_person_medical_appointments = ACTIVITY5,
+       in_home_housekeeping = ACTIVITY6,
+       household_food_sufficiency = CURFOODSUF,
+       household_free_food = FREEFOOD,
+       snap_receipt = SNAP_YN,
+       anxious = ANXIOUS,
+       worry = WORRY,
+       interest = INTEREST,
+       depressed = DOWN,
+       prescription_mental_health = PRESCRIPT,
+       mental_health_services = MH_SVCS,
+       mental_health_not_get = MH_NOTGET,
+       private_health_insurance = PRIVHLTH,
+       public_health_insurance = PUBHLTH,
+       telehealth_personal = TELEHLTH,
+       telehealth_child = TELECHLD,
+       child_missed_checkups = PRVNTIVE,
+       seeing_limitations = SEEING,
+       hearing_limitations = HEARING,
+       remembering_limitations = REMEMBERING,
+       mobility_limitations = MOBILITY,
+       housing_owned_rented = TENURE,
+       building_type = LIVQTRRV,
+       rent_caught_up = RENTCUR,
+       mortgage_caught_up = MORTCUR,
+       housing_pay_confidence = MORTCONF,
+       rent_assistance_apply = RENTASSIST,
+       eviction_likelihood = EVICT,
+       foreclose_likelihood = FORCLOSE,
+       energy_pay_trouble = ENERGY,
+       housing_unsafe_temp = HSE_TEMP,
+       income = INCOME,
+       age = AGE,
+       kids = KIDS,
+       active_duty = ACTVDUTY,
+       essential_worker = ESSENTIAL,
+       pandemic_child_impact = CHLDIMPCT,
+       summer_educational_catch_up = SUMMER_ED,
+       post_sec_edu_plan_changes = PSCHNG,
+       children_public_school = ENROLLPUB,
+       children_private_school = ENROLLPRIV,
+       children_homeschool = ENROLLHMSCH,
+       post_secondary_classes = PS_YN
+       ) %>%
+  drop_na()
+
+cols = c("region", "hispanic", "race", "education_level", "marital_status", 
+         "birth_gender", "described_gender", "sexual_orientation", 
+         "number_kids_household", "number_adults_household", "had_covid", 
+         "recent_work_loss", "employment", "child_tax_credit", 
+         "difficulty_with_expenses", "work_onsite", "work_from_home", 
+         "in_store_shopping", "eating_indoors_restaurants", 
+         "in_person_medical_appointments", "in_home_housekeeping", 
+         "household_food_sufficiency", "household_free_food", "snap_receipt",
+         "anxious", "worry", "interest", "depressed", 
+         "prescription_mental_health", "mental_health_services", 
+         "mental_health_not_get", "private_health_insurance", 
+         "public_health_insurance", "telehealth_personal", "telehealth_child",
+         "child_missed_checkups", "seeing_limitations", "hearing_limitations", 
+         "remembering_limitations", "mobility_limitations", 
+         "housing_owned_rented", "building_type", "rent_caught_up", 
+         "mortgage_caught_up", "housing_pay_confidence", 
+         "rent_assistance_apply", "eviction_likelihood", "foreclose_likelihood",
+         "energy_pay_trouble", "housing_unsafe_temp", "income", "kids", 
+         "active_duty", "essential_worker", "pandemic_child_impact", 
+         "summer_educational_catch_up", "post_sec_edu_plan_changes", 
+         "children_public_school", "children_private_school", 
+         "children_homeschool", "post_secondary_classes", "vaccine_hesitancy"
+         )
+  
+vh_data <-
+  vh_data %>%
+       mutate_each_(funs(factor(.)), cols)
+
+# utilize downsampling to adjust for class imbalance
+vh_data_positive <-
+  vh_data %>%
+  filter(vaccine_hesitancy == 1)
+
+vh_data_negative <-
+  vh_data %>%
+  filter(vaccine_hesitancy == 0)
+
+set.seed(5) # seed set for reproducibility
+vh_data_negative <- 
+  vh_data_negative %>%
+  sample_frac(.15)
+
+vh_data <- 
+  rbind(vh_data_negative, vh_data_positive)
+
+# write cleaned data to file
+write_tsv(vh_data, file = "../data/clean/vh_data.tsv")
+```
+

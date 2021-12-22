@@ -1,0 +1,252 @@
+---
+title: "R Notebook"
+output:
+  pdf_document: default
+  html_notebook: default
+---
+
+```{r}
+# load libraries
+library(kableExtra)                     # for printing tables
+library(cowplot)                        # for side by side plots
+library(glmnetUtils)                    # to run ridge and lasso
+library(tidyverse)                      # for everything else
+library(naniar)                         # for replace NA 
+library(rpart)
+library(rpart.plot)
+library(randomForest)
+library(gbm)
+library(tidyverse)
+library(nnet)
+library(pROC)
+source("../code/functions/plot_glmnet.R")   
+```
+
+```{r}
+# read in the training data
+vh_train = read_tsv("../data/clean/vh_train.tsv")
+
+cols = c("region", "hispanic", "race", "education_level", "marital_status", 
+         "birth_gender", "described_gender", "sexual_orientation", 
+         "number_kids_household", "number_adults_household", "had_covid", 
+         "recent_work_loss", "employment", "child_tax_credit", 
+         "difficulty_with_expenses", "work_onsite", "work_from_home", 
+         "in_store_shopping", "eating_indoors_restaurants", 
+         "in_person_medical_appointments", "in_home_housekeeping", 
+         "household_food_sufficiency", "household_free_food", "snap_receipt",
+         "anxious", "worry", "interest", "depressed", 
+         "prescription_mental_health", "mental_health_services", 
+         "mental_health_not_get", "private_health_insurance", 
+         "public_health_insurance", "telehealth_personal", "telehealth_child",
+         "child_missed_checkups", "seeing_limitations", "hearing_limitations", 
+         "remembering_limitations", "mobility_limitations", 
+         "housing_owned_rented", "building_type", "rent_caught_up", 
+         "mortgage_caught_up", "housing_pay_confidence", 
+         "rent_assistance_apply", "eviction_likelihood", "foreclose_likelihood",
+         "energy_pay_trouble", "housing_unsafe_temp", "income", "kids", 
+         "active_duty", "essential_worker", "pandemic_child_impact", 
+         "summer_educational_catch_up", "post_sec_edu_plan_changes", 
+         "children_public_school", "children_private_school", 
+         "children_homeschool", "post_secondary_classes"
+         )
+  
+vh_train <-
+  vh_train %>%
+       mutate_each_(funs(factor(.)), cols)
+
+# run decision tree 
+decision_tree_fit = rpart(vaccine_hesitancy ~ .,
+                 method = "class", # classification
+                 parms = list(split = "gini"), # Gini index for splitting 
+                 data = vh_train)
+rpart.plot(decision_tree_fit)
+
+cp_table = printcp(decision_tree_fit) %>% as_tibble()
+
+cp_table %>%
+  ggplot(aes(x = nsplit+1, y = xerror,
+             ymin = xerror - xstd, ymax = xerror + xstd)) +
+  geom_point() + geom_line() +
+  geom_errorbar(width = 0.2) +
+  xlab("Number of terminal nodes") + ylab("CV error") +
+  geom_hline(aes(yintercept = min(xerror)), linetype = "dashed") +
+  theme_bw()
+
+# construct optimal decision tree
+optimal_tree_info = cp_table %>%
+  filter(xerror - xstd < min(xerror)) %>%
+  arrange(nsplit) %>%
+  head(1)
+optimal_tree_info
+
+# prune optimal tree fit
+optimal_tree_fit = prune(tree = decision_tree_fit, cp = optimal_tree_info$CP)
+
+# save optimal tree fit
+save(optimal_tree_fit, file = "../results/optimal_tree_fit.Rda")
+
+png(width = 6, 
+    height = 4,
+    res = 300,
+    units = "in", 
+    filename = "../results/decision-tree-plot.png")
+rpart.plot(optimal_tree_fit)
+dev.off()
+```
+```{r}
+# run random forest
+# rf_fit = randomForest(factor(vaccine_hesitancy) ~ ., data = vh_train)
+# plot(rf_fit)
+# rf_fit$err.rate %>% head()
+```
+```{r}
+# OOB error
+ # tibble(oob_error = rf_fit$err.rate[,"OOB"],
+ #       trees = 1:500) %>%
+ #  ggplot(aes(x = trees, y = oob_error)) + geom_line() + theme_bw()
+```
+```{r}
+# set.seed(1)
+# # tune the random forests with different values of m
+# num_m = as.integer(5) # calculate five values of m 
+# mvalues = as.integer(seq.int(from = 1, to = 57, length.out = num_m)) 
+# oob_errors = numeric(length(mvalues))
+# ntree = 225
+# 
+# for(idx in 1:length(mvalues)){
+#   m = mvalues[idx]
+#   rf_fit = randomForest(factor(vaccine_hesitancy) ~ ., mtry = m, data = vh_train)
+#   oob_errors[idx] = rf_fit$err.rate[ntree]
+# }
+# 
+# # plot OOB error versus m
+# m_and_oob_errors = tibble(m = mvalues, oob_err = oob_errors)
+# m_and_oob_errors %>%
+#   ggplot(aes(x = m, y = oob_err)) +
+#   geom_line() +
+#   geom_point() +
+#   scale_x_continuous(breaks = mvalues) +
+#   labs(x = "Value for m", y = "OOB error") +
+#   theme_bw()
+```
+
+```{r}
+# # tune random forest model
+# set.seed(1) # for reproducibility (DO NOT CHANGE)
+# best_m = m_and_oob_errors %>% arrange(oob_errors) %>% head(1) %>% pull(m)
+# optimal_rf_fit = randomForest(factor(vaccine_hesitancy) ~ ., 
+#                             mtry = best_m, 
+#                             ntree = 500,
+#                             importance = TRUE, 
+#                             data = vh_train)
+# save(optimal_rf_fit, file = "../results/optimal_rf_fit.Rda")
+```
+
+```{r}
+# # construct OOB error plot
+# rf_oob_error_plot <-
+#   tibble(oob_error = optimal_rf_fit$err.rate[,"OOB"], trees = 1:500) %>%
+#   ggplot(aes(x = trees, y = oob_error)) +
+#   geom_line() +
+#   labs(x = "Number of trees", y = "OOB error") +
+#   theme_bw()
+# 
+# png(width = 6, 
+#     height = 4,
+#     res = 300,
+#     units = "in", 
+#     filename = "../results/rf-oob-error-plot.png")
+# rf_oob_error_plot
+# dev.off()
+```
+
+```{r}
+# # construct variable importance plot
+# png(width = 6, 
+#     height = 4,
+#     res = 300,
+#     units = "in", 
+#     filename = "../results/rf-var-imp-plot.png")
+# varImpPlot(optimal_rf_fit, n.var = 10)
+# dev.off()
+```
+
+# Boosted model
+
+```{r}
+set.seed(1)
+boosted_fit = gbm(vaccine_hesitancy ~ .,
+              distribution = "bernoulli",
+              n.trees = 400,
+              interaction.depth = 1,
+              shrinkage = 0.1,
+              cv.folds = 5,
+              data = vh_train)
+opt_num_trees = gbm.perf(boosted_fit)
+
+# try a few values
+set.seed(1)
+boosted_fit_1 = gbm(vaccine_hesitancy ~ .,
+              distribution = "bernoulli",
+              n.trees = 400,
+              interaction.depth = 1,
+              shrinkage = 0.1,
+              cv.folds = 5,
+              data = vh_train)
+set.seed(1)
+boosted_fit_2 = gbm(vaccine_hesitancy ~ .,
+              distribution = "bernoulli",
+              n.trees = 400,
+              interaction.depth = 2,
+              shrinkage = 0.1,
+              cv.folds = 5,
+              data = vh_train)
+set.seed(1)
+boosted_fit_3 = gbm(vaccine_hesitancy ~ .,
+              distribution = "bernoulli",
+              n.trees = 400,
+              interaction.depth = 3,
+              shrinkage = 0.1,
+              cv.folds = 5,
+              data = vh_train)
+# extract CV errors
+ntrees = 400
+cv_errors = bind_rows(
+  tibble(ntree = 1:ntrees, cv_err = boosted_fit_1$cv.error, depth = 1),
+  tibble(ntree = 1:ntrees, cv_err = boosted_fit_2$cv.error, depth = 2),
+  tibble(ntree = 1:ntrees, cv_err = boosted_fit_3$cv.error, depth = 3)
+)
+# plot CV errors
+cv_errors %>%
+  ggplot(aes(x = ntree, y = cv_err, colour = factor(depth))) +
+  geom_line() + theme_bw()
+
+# plot optimal cv
+
+optimal_cv_errors = bind_rows(
+  tibble(ntree = 1:ntrees, cv_err = boosted_fit_2$cv.error, depth = 3))
+
+p = optimal_cv_errors %>%
+  ggplot(aes(x = ntree, y = cv_err)) +
+  geom_line() + theme_bw()
+
+ggsave(filename = "../results/boosted-cv-plot.png", 
+       plot = p, 
+       device = "png", 
+       width = 6, 
+       height = 4)
+```
+
+```{r}
+boosted_fit_optimal = boosted_fit_2
+optimal_num_trees = gbm.perf(boosted_fit_2, plot.it = FALSE)
+
+# save optimal boosted fit
+save(boosted_fit_optimal, file = "../results/optimal_boosted_fit.Rda")
+
+boosted_var_summary <-
+  summary(boosted_fit_optimal, n.trees = optimal_num_trees, plotit = FALSE) %>%
+  head(10) %>%
+  write_tsv("../results/boosted-var-summary.tsv")
+```
+
