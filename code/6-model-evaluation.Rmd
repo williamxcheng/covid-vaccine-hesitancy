@@ -81,17 +81,14 @@ load("../results/lasso_fit.Rda")
 # load elastic net fit object
 load("../results/elnet_fit.Rda")
 
-#load decision tree fit object
+#load classification tree fit object
 load("../results/optimal_tree_fit.Rda")
-
-# #load random forest fit object
-# load("../results/optimal_rf_fit.Rda")
 
 #load boosted fit object
 load("../results/optimal_boosted_fit.Rda")
 ```
 
-
+# Logistic
 ```{r}
 # evaluate logistic model
 logistic_fitted_probabilities = predict(glm_fit,
@@ -156,8 +153,7 @@ tibble(Metric = c("Misclassification Error",
    write_tsv("../results/logistic-evaluation.tsv")
 ```
 
-
-# Boosted
+# Ridge
 ```{r}
 # evaluate ridge
 ridge_probabilities = predict(ridge_fit,
@@ -292,10 +288,6 @@ tibble(Metric = c("Misclassification Error",
    write_tsv("../results/lasso-evaluation.tsv")
 ```
 
-
-```{r}
-```
-
 # Elastic Net
 ```{r}
 # evaluate elastic net
@@ -364,77 +356,65 @@ tibble(Metric = c("Misclassification Error",
    write_tsv("../results/elnet-evaluation.tsv")
 ```
 
-# Decision Tree
+# Classification Tree
 ```{r}
-# evaluate decision tree
+# evaluate classification tree
 optimal_tree_prediction = 
   predict(optimal_tree_fit, newdata = vh_test, type = "class")
 
-dt_test = 
+ct_test = 
   vh_test %>%
   mutate(predicted_hesitancy = optimal_tree_prediction)
 
-# calculate misclassification rate for decision tree
-dt_misclassification_rate <-
-  dt_test %>%
+# calculate misclassification rate for classification tree
+ct_misclassification_rate <-
+  ct_test %>%
   summarise(mean(vaccine_hesitancy != predicted_hesitancy))
-dt_misclassification_rate <- as.numeric(dt_misclassification_rate)
+ct_misclassification_rate <- as.numeric(ct_misclassification_rate)
 
-# calculate decision tree confusion matrix
-dt_confusion_matrix <-
-  dt_test %>%
+# calculate classification tree confusion matrix
+ct_confusion_matrix <-
+  ct_test %>%
   select(vaccine_hesitancy, predicted_hesitancy) %>%
   table()
 save(dt_confusion_matrix, 
-     file = "../results/dt-confusion-matrix.RData")
+     file = "../results/ct-confusion-matrix.RData")
 
-# calculate false positive rate for decision tree
-dt_false_positives = 
-  dt_test %>% 
+# calculate false positive rate for classification tree
+ct_false_positives = 
+  ct_test %>% 
   select(vaccine_hesitancy, predicted_hesitancy) %>%
   filter(vaccine_hesitancy == 0 & predicted_hesitancy == 1) %>% 
   nrow()
-dt_actual_negatives = 
-  dt_test %>% 
+ct_actual_negatives = 
+  ct_test %>% 
   select(vaccine_hesitancy, predicted_hesitancy) %>%
   filter(vaccine_hesitancy == 0) %>% 
   nrow()
-dt_fp_rate = dt_false_positives / dt_actual_negatives
+ct_fp_rate = ct_false_positives / ct_actual_negatives
 
-# calculate false negative rate for decision tree
-dt_false_negatives = 
-  dt_test %>% 
+# calculate false negative rate for classification tree
+ct_false_negatives = 
+  ct_test %>% 
   select(vaccine_hesitancy, predicted_hesitancy) %>%
   filter(vaccine_hesitancy == 1 & predicted_hesitancy == 0) %>% 
   nrow()
-dt_actual_positives = 
-  dt_test %>% 
+ct_actual_positives = 
+  ct_test %>% 
   select(vaccine_hesitancy, predicted_hesitancy) %>%
   filter(vaccine_hesitancy == 1) %>% nrow()
-dt_fn_rate = dt_false_negatives / dt_actual_positives
+ct_fn_rate = ct_false_negatives / ct_actual_positives
 
-# summarize performance metrics for decision tree
+# summarize performance metrics for classification tree
 tibble(Metric = c("Misclassification Error", 
                   "False Positive Rate", 
                   "False Negative Rate"),
         `Classifier Performance` = 
-         c(dt_misclassification_rate, 
-           dt_fp_rate,
-           dt_fn_rate)) %>%
-   write_tsv("../results/dt-evaluation.tsv")
-
-# save(dt_confusion_matrix, 
-#      file = "../results/decision-tree-confusion-matrix.RData")
-
-# dt_misclassification_rate <-
-#   mean(optimal_tree_prediction != vh_test$vaccine_hesitancy)
-# 
-# dt_misclassification_rate <- as.numeric(dt_misclassification_rate)
-# 
-# dt_confusion_matrix <-
-#   table(optimal_tree_prediction, truth = vh_test$vaccine_hesitancy)
+         c(ct_misclassification_rate, 
+           ct_fp_rate,
+           ct_fn_rate)) %>%
+   write_tsv("../results/ct-evaluation.tsv")
 ```
-
 
 # Boosted 
 ```{r}
@@ -577,28 +557,28 @@ tibble(Metric = c("Misclassification Error",
 # Summary of Performance
 ```{r}
 # print nice table
-tibble(Method = c("Logistic", "Ridge", "LASSO", "Elastic Net", "Decision Tree",
-                  "Boosted"),
+tibble(Method = c("Logistic", "Ridge", "LASSO", "Elastic Net", 
+                  "Classification Tree", "Boosted"),
         `Misclassification Error` = 
          c(logistic_misclassification_rate, 
            ridge_misclassification_rate, 
            lasso_misclassification_rate,
            elnet_misclassification_rate,
-           dt_misclassification_rate,
+           ct_misclassification_rate,
            boosted_misclassification_rate), 
         `False Positive Rate` = 
          c(logistic_fp_rate,
            ridge_fp_rate,
            lasso_fp_rate,
            elnet_fp_rate,
-           dt_fp_rate,
+           ct_fp_rate,
            boosted_fp_rate), 
         `False Negative Rate` = 
          c(logistic_fn_rate,
            ridge_fn_rate,
            lasso_fn_rate,
            elnet_fn_rate,
-           dt_fn_rate,
+           ct_fn_rate,
            boosted_fn_rate)) %>%
    write_tsv("../results/model-evaluation.tsv")
 ```

@@ -1,7 +1,7 @@
 ---
-title: 'Measuring COVID-19 Vaccine Hesitancy'
+title: 'Predicting COVID-19 Vaccine Hesitancy'
 author: 'William Cheng'
-date: 'December 14, 2021'
+date: 'December 19, 2021'
 output:
   bookdown::pdf_document2:
     number_sections: yes
@@ -28,7 +28,7 @@ The code to reproduce this report is available [on Github](https://github.com/wi
 
 **Data.** My dataset pulled data from the Household Pulse Survey, a program by the U.S. Census. My explanatory variables span four main categories of factors: demographics (e.g. age, ethnicity, marital status), health (e.g. anxiety, depression), economic factors (e.g. health insurance coverage, income), and . My primary response variable of interest was the willingness to take the vaccine. 
 
-**Analysis.** Before exploring the data or running any analyses, I split the data into a training dataset and a test dataset, with the training dataset used for building the predictive models and the test dataset used for assessing and comparing model performance. Then, I explored the data to check for class imbalance and to assess correlations between variables and between variables and the response. In order to build an optimal predictive model, I constructed six different models: logistic, ridge regression, LASSO regression, elastic net regression, decision trees, and boosting. Of the regression models, logistic regression had the lowest misclassification rate and of the tree-based models, the boosted model had the lowest misclassification rate. The logistic regression and the boosted model had near-identical misclassification rates.
+**Analysis.** Before exploring the data or running any analyses, I split the data into a training dataset and a test dataset, with the training dataset used for building the predictive models and the test dataset used for assessing and comparing model performance. Then, I explored the data to check for class imbalance and to assess correlations between variables and between variables and the response. In order to build an optimal predictive model, I constructed six different models: logistic, ridge regression, LASSO regression, elastic net regression, classification tree, and boosted. Of the regression models, logistic regression had the lowest misclassification rate and of the tree-based models, the boosted model had the lowest misclassification rate. The logistic regression and the boosted model had near-identical misclassification rates.
 
 **Conclusions.** Interestingly, we found that the boosted and elastic net regression both pointed to similar types of variables as the strongest predictors of deaths per cases. Specifically, our optimal boosted model revealed that variables related to residential segregation and unemployment emerged as the most significant predictors, revealing that structural economic and health access inequalities were more predictive of COVID-19 deaths per cases than other variables. We hope that this analysis can inform policies aimed at improving health outcome determinants, both in the context of COVID-19 and more generally going forward. 
 
@@ -74,7 +74,7 @@ I split my dataset into two subsets: a training dataset used for building the pr
 
 ### Response
 
-I first sought to understand the distribution of the response variable in the training dataset. As seen in the histogram of responses in Figure \@ref(fig:response-histogram), after utilizing my down-sizing method, there are 3082 observations that are vaccine hesitant, comprising 37.7% of the data, while there are 5102 observations that are not hesitant, comprising 62.3% of the data.
+I first sought to understand the distribution of the response variable in the training dataset. As seen in the histogram of responses in Figure \@ref(fig:response-histogram), after utilizing my downsampling method to adjust for class imbalance, there are 3082 observations that are vaccine hesitant, comprising 37.7% of the data, while there are 5102 observations that are not hesitant, comprising 62.3% of the data.
 
 ```{r response-histogram, out.width = "80%", fig.cap = "Distribution of responses", fig.align='center', echo = FALSE}
 knitr::include_graphics("../results/response-histogram.png")
@@ -204,9 +204,9 @@ read_tsv("../results/lasso-evaluation.tsv") %>%
 
 Finally, I ran a elastic net regression. Figure \@ref(fig:elnet-CV-plot) shows the CV plot, Figure \@ref(fig:elnet-trace-plot) shows the trace plot, and Table \@ref(tab:elnet-coefficients)  shows the top 10 features with the largest standardized coefficients.
 
-According to the CV plot, the elastic net regression selected 82 features if lambda is selected according to the one-standard-error rule. Like the other regression models, the elastic net regression found that older individuals, those without prior exposure to COVID, and those with higher educational attainments are less likely to be vaccine hesitant. Like the LASSO regression, the elastic net regression also found that individuals who did not eat indoors in restaurants are also less likely to be vaccine hesitant, and it also found that individuals with more children in their household are more likely to be vaccine hesitant.
+According to the CV plot, the elastic net regression selected roughly 91 features if lambda is selected according to the one-standard-error rule. Like the other regression models, the elastic net regression found that older individuals, those without prior exposure to COVID, and those with higher educational attainments are less likely to be vaccine hesitant. Like the LASSO regression, the elastic net regression also found that individuals who did not eat indoors in restaurants are also less likely to be vaccine hesitant, and it also found that individuals with more children in their household are more likely to be vaccine hesitant.
 
-Table \@ref(tab:elnet-evaluation) shows that the model has a misclassification rate of [].
+The confusion matrix can be seen in Table \@ref(tab:elnet-confusion-matrix) and the performance metrics for the elastic net regression can be seen in Table \@ref(tab:elnet-evaluation). The elastic net model has a misclassification rate of 0.297, which is the highest of all the regression models. The elastic net regression has the lowest false positive rate out of all the models at 0.070 and it has the highest false negative rate of all the models at 0.667.
 
 ```{r elnet-CV-plot, out.width = "90%", fig.cap = "Elastic net CV plot.", fig.align='center', echo = FALSE}
 knitr::include_graphics("../results/elnet-cv-plot.png")
@@ -246,33 +246,33 @@ read_tsv("../results/elnet-evaluation.tsv") %>%
 
 ## Tree-based methods
 
-[Omitted from template.]
+### Classification trees
 
-### Decision trees
+After fitting the regression models, I decided to fit two tree-based models: classification tree and boosted model. 
 
-After fitting the regression models, I decided to fit two tree-based models: decision trees and random forest. 
+With the classification tree, I fitted and pruned an optimal tree. This tree can be seen in Figure \@ref(fig:ct-plot). There were 4 splits conducted that resulted in 5 terminal nodes. The sequence of splits that leads to the terminal node with the largest fraction of hesitant individuals is the following: 1. feature: education_level, split point: education_level = 6 or 7 (bachelor's or graduate degree), direction: frequency is not equal to 6 or 7 (i.e., right); 2. feature: age, split point: age >= 59 years, direction: age is < 59 years (i.e., right). Thus, the classification tree seems to suggest that individuals below 59 years of age with lower educational attainment are more likely to be vaccine hesitant. The splits that lead to the terminal node with the lowest fraction of hesitant individuals suggests that individuals with high educational attainment (bachelor's or graduate degree) and who did not have prior exposure to COVID are less likely to be vaccine hesitant.
 
-With the decision trees, I fitted and pruned an optimal tree. This tree can be seen in Figure \@ref(fig:dt-plot). The confusion matrix for the decision tree can be seen in Table \@ref(tab:dt-confusion-matrix). The performance metrics can be seen in. 
+The confusion matrix can be seen in Table \@ref(tab:ct-confusion-matrix) and the performance metrics for the classification tree can be seen in Table \@ref(tab:ct-evaluation). The classification tree has a misclassification rate of 0.317, which is the highest of all the models. The classification tree has a false positive rate of 0.263 and a false negative rate of 0.404. 
 
-```{r dt-plot, out.width = "90%", fig.cap = "Decision tree plot.", fig.align='center', echo = FALSE}
-knitr::include_graphics("../results/decision-tree-plot.png")
+```{r ct-plot, out.width = "90%", fig.cap = "Classification tree plot.", fig.align='center', echo = FALSE}
+knitr::include_graphics("../results/classification-tree-plot.png")
 ```
 
-```{r dt-confusion-matrix, out.width = "90%", fig.cap = "Decision tree confusion matrix.", fig.align='center', echo = FALSE}
-load("../results/dt-confusion-matrix.RData")
-dt_confusion_matrix %>%
+```{r ct-confusion-matrix, out.width = "90%", fig.cap = "Classification tree confusion matrix.", fig.align='center', echo = FALSE}
+load("../results/ct-confusion-matrix.RData")
+ct_confusion_matrix %>%
   kable(format = "latex", row.names = NA,
       booktabs = TRUE,
-      caption = "The confusion matrix for the decision tree") %>%
+      caption = "The confusion matrix for the classification tree") %>%
   kable_styling(latex_options = "HOLD_position")
 ```
 
-```{r dt-evaluation, out.width = "90%", fig.cap = "Decision tree performance", fig.align='center', message = FALSE, echo = FALSE}
-read_tsv("../results/dt-evaluation.tsv") %>%
+```{r ct-evaluation, out.width = "90%", fig.cap = "Classification tree performance", fig.align='center', message = FALSE, echo = FALSE}
+read_tsv("../results/ct-evaluation.tsv") %>%
     kable(format = "latex", row.names = NA,
          booktabs = TRUE, digits = 3,
           col.names = c("Metric", "Classifier Performance"),
-          caption = "The performance metrics of the decision tree") %>%
+          caption = "The performance metrics of the classification tree") %>%
     kable_styling(position = "center", latex_options = "HOLD_position")
 ```
 
@@ -323,13 +323,13 @@ read_tsv("../results/boosted-evaluation.tsv") %>%
    kable_styling(position = "center", latex_options = "HOLD_position")
 ```
 
-Table \@ref(tab:model-evaluation) shows the misclassification error, false positive rate, and false negative rate for all the methods considered. The logistic and the boosted model have the lowest misclassification errors at 0.25. While I expected the boosted model to have a low misclassification error due to the boosted model's tendency to have high predictive accuracy, the accuracy of the logistic model was unexpected. The ridge and LASSO regressions also have low misclassification errors at 0.26 each. The decision tree performed the worst out of all the models.
+Table \@ref(tab:model-evaluation) shows the misclassification error, false positive rate, and false negative rate for all the methods considered. The logistic and the boosted model have the lowest misclassification errors at 0.25. While I expected the boosted model to have a low misclassification error due to the boosted model's tendency to have high predictive accuracy, the accuracy of the logistic model was unexpected. The ridge and LASSO regressions also have low misclassification errors at 0.26 each. The classification tree performed the worst out of all the models.
 
 Even with these differences in misclassification error, the methods have significant overlap in their identification of important variables. Age was the most significant variable across nearly all the models, but other variables that were selected by more than one model included having a previous diagnosis of COVID, education level, and eating indoors in restaurants. 
 
 ## Takeaways
 
-My results point to a few key factors that public health officials should consider when aiming to improve the COVID-19 vaccination rate in the United States. The boosted model, which had the strongest predictive performance, suggests that age is the most important variable in predicting an individual's vaccine hesitancy. This is corroborated by other models such as the decision tree, which also find that age is a significant predictor. Education level is also highly important in the boosted model, along with having prior exposure to COVID. These variables are identified across all models suggesting these relationships are robust. 
+My results point to a few key factors that public health officials should consider when aiming to improve the COVID-19 vaccination rate in the United States. The boosted model, which had the strongest predictive performance, suggests that age is the most important variable in predicting an individual's vaccine hesitancy. This is corroborated by other models such as the classification tree, which also find that age is a significant predictor. Education level is also highly important in the boosted model, along with having prior exposure to COVID. These variables are identified across all models suggesting these relationships are robust. 
 
 There are many possible ways that these results can be acted upon. For example, given that it seems that education levels are significant, public health officials can work to better explain how vaccination strengthens immune systems.
 

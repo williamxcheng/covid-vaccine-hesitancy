@@ -153,6 +153,10 @@ beta_hat_std %>%
   arrange(desc(abs(coefficient))) %>% 
   head(10) %>%
   write_tsv("../results/lasso-features-table.tsv")
+
+num_features = lasso_fit$nzero[lasso_fit$lambda == lasso_fit$lambda.1se]
+sprintf("The number of features (excluding intercept) selected (1se): %i",
+        num_features)
 ```
 
 # Elastic Net Regression
@@ -194,5 +198,9 @@ beta_hat_std %>%
   arrange(desc(abs(coefficient))) %>% 
   head(10) %>%
   write_tsv("../results/elnet-features-table.tsv")
+
+elnet_num_features = elnet_fit_best$nzero[lasso_fit$lambda == lasso_fit$lambda.1se]
+sprintf("The number of features (excluding intercept) selected (1se): %i",
+        elnet_num_features)
 ```
 

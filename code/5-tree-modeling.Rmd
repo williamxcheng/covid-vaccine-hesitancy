@@ -53,14 +53,14 @@ vh_train <-
   vh_train %>%
        mutate_each_(funs(factor(.)), cols)
 
-# run decision tree 
-decision_tree_fit = rpart(vaccine_hesitancy ~ .,
+# run classification tree 
+deepest_classification_tree_fit = rpart(vaccine_hesitancy ~ .,
                  method = "class", # classification
                  parms = list(split = "gini"), # Gini index for splitting 
+                 control = rpart.control(minsplit = 1, minbucket = 1, cp = 0),
                  data = vh_train)
-rpart.plot(decision_tree_fit)
 
-cp_table = printcp(decision_tree_fit) %>% as_tibble()
+cp_table = printcp(deepest_decision_tree_fit) %>% as_tibble()
 
 cp_table %>%
   ggplot(aes(x = nsplit+1, y = xerror,
@@ -71,7 +71,7 @@ cp_table %>%
   geom_hline(aes(yintercept = min(xerror)), linetype = "dashed") +
   theme_bw()
 
-# construct optimal decision tree
+# construct optimal classification tree
 optimal_tree_info = cp_table %>%
   filter(xerror - xstd < min(xerror)) %>%
   arrange(nsplit) %>%
@@ -88,7 +88,7 @@ png(width = 6,
     height = 4,
     res = 300,
     units = "in", 
-    filename = "../results/decision-tree-plot.png")
+    filename = "../results/classification-tree-plot.png")
 rpart.plot(optimal_tree_fit)
 dev.off()
 ```
