@@ -46,7 +46,7 @@ Past research has shown that vaccine hesitancy is a complex issue and can be inf
 
 ## Data sources
 
-My dataset originated from the Household Pulse Survey conducted by the U.S. Census. The Household Pulse Survey seeks to measure how the COVID-19 pandemic is impacting households across the country from a social and economic perspective. Specifically, along with measuring the intention of the respondent to get vaccinated for COVID-19, the Household Pulse Survey includes measures of demographics, economic welfare, and lifestyle factors. To construct my dataset, I pulled data from one collection period, amounting to the timeframe between September 29 to October 11, 2021. 
+My dataset originated from the Household Pulse Survey conducted by the U.S. Census^[https://www.census.gov/programs-surveys/household-pulse-survey/datasets.html]. The Household Pulse Survey seeks to measure how the COVID-19 pandemic is impacting households across the country from a social and economic perspective. Specifically, along with measuring the intention of the respondent to get vaccinated for COVID-19, the Household Pulse Survey includes measures of demographics, economic welfare, and lifestyle factors. To construct my dataset, I pulled data from one collection period, amounting to the timeframe between September 29 to October 11, 2021. 
 
 ## Data cleaning
 
@@ -315,7 +315,7 @@ Even with these differences in misclassification error, the methods have signifi
 
 ## Takeaways
 
-Our results point to a few key factors that public health officials should consider when aiming to improve the COVID-19 vaccination rate in the United States. The boosted model, which had the strongest predictive performance, suggests that age is the most important variable in predicting an individual's vaccine hesistancy. This is corroborated by other models such as the decision tree, which also find that age is a significant predictor. Education level is also highly important in the boosted model, along with having prior exposure to COVID. These variables are identified across all models suggesting these relationships are robust. 
+My results point to a few key factors that public health officials should consider when aiming to improve the COVID-19 vaccination rate in the United States. The boosted model, which had the strongest predictive performance, suggests that age is the most important variable in predicting an individual's vaccine hesitancy. This is corroborated by other models such as the decision tree, which also find that age is a significant predictor. Education level is also highly important in the boosted model, along with having prior exposure to COVID. These variables are identified across all models suggesting these relationships are robust. 
 
 There are many possible ways that these results can be acted upon. For example, given that it seems that education levels are significant, public health officials can work to better explain how vaccination strengthens immune systems.
 
