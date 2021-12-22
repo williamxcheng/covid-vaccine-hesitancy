@@ -90,7 +90,9 @@ As my response was categorical and all my features apart from age were categoric
 
 ### Logistic regression
 
-For the first model, I decided to fit a logistic regression with all 62 features to the training data. For this model, Table \@ref(tab:logistic-confusion-matrix) shows the resulting confusion matrix. The logistic regression revealed that the following variables are significantly associated with the response: [], []. The misclassification error as seen in Table \@ref(tab:logistic-evaluation) shows that the model has a misclassification rate of []. The resulting false positive rate is [] and the false negative rate is [], which shows that the model tends to [].
+For the first model, I decided to fit a logistic regression with all 62 features to the training data. The logistic regression revealed that the following variables are significantly associated with the response at the 0.05 level: living in specific regions (South, Midwest, and West), being of Hispanic origin, being Black or Asian, having a bachelor's or graduate degree, sexuality (LGBTQ+), having a high number of people in the household, having prior exposure to COVID or potential prior exposure, having no to little difficulty with expenses, shopping in-store, receiving and using a SNAP receipt, having no private or public health insurance, living in a mobile-style home (mobile, boat, RV, van, etc.), having higher income, having to personally take on additional care for children, having at least one child attend private school or homeschool, and age. 
+
+For the logistic model, Table \@ref(tab:logistic-confusion-matrix) shows the resulting confusion matrix. The performance metrics are listed in Table \@ref(tab:logistic-evaluation), shows that the model has a misclassification error rate of 0.250. The resulting false positive rate is 0.166 and the false negative rate is 0.386, which shows that the model could have lower sensitivity and higher specificity.
 
 ```{r logistic-confusion-matrix, out.width = "90%", fig.cap = "Lasso CV plot.", fig.align='center', echo = FALSE}
 load("../results/logistic-confusion-matrix.RData")
@@ -112,9 +114,11 @@ read_tsv("../results/logistic-evaluation.tsv") %>%
 
 ### Penalized regression
 
-While the logistic regression seemed to produce a model that worked well, fitting a logstic model with so many explanatory variables might incur a large cost in variance and lead to suboptimal predictions. [CHANGE] Hence, I decided to build and evaluate shrinkage models with the hopes of getting a more parsimonious and interpretable model.[CHANGE] I ran three cross-validated regressions for which optimal values of lambda were chosen according to the one-standard-error rule: ridge regression, LASSO (Least Absolute Shrinkage and Selection Operator) regression, and elastic net regression. 
+While the logistic regression seemed to produce a model that worked well, fitting a logistic model with many explanatory variables can lead to high variance and suboptimal predictions. Thus, I decided to build and evaluate shrinkage models with the aim of reducing variance and obtaining a more accurate model. I ran three cross-validated regressions for which optimal values of lambda were chosen according to the one-standard-error rule: ridge regression, LASSO (Least Absolute Shrinkage and Selection Operator) regression, and elastic net regression. 
 
-For the ridge regression, Figure \@ref(fig:ridge-CV-plot) shows the CV plot, Figure \@ref(fig:ridge-trace-plot) shows the trace plot, and [TODO] Table \@ref(tab:ridge-coefficients) shows the selected features and their coefficients. Table \@ref(tab:ridge-evaluation) [] shows that the model has a misclassification rate of [].
+For the ridge regression, Figure \@ref(fig:ridge-CV-plot) shows the CV plot, Figure \@ref(fig:ridge-trace-plot) shows the trace plot, and Table \@ref(tab:ridge-coefficients) lists the top 10 features with the highest standardized coefficients. As seen from the trace plot and table of coefficients, the variables of age, education level, and having prior exposure to COVID seemed to have the greatest association with the response. 
+
+The confusion matrix can be seen in Table \@ref(tab:ridge-confusion-matrix) and the performance metrics for the ridge regression can be seen in Table \@ref(tab:ridge-evaluation). The ridge model has a misclassification rate of 0.266, which is higher than the logistic regression. According to the false positive rate of 0.136 and the false negative rate of 0.480, the ridge regression seems to have higher specificity and lower sensitivity than the logistic regression. 
 
 ```{r ridge-CV-plot, out.width = "90%", fig.cap = "Ridge CV plot.", fig.align='center', echo = FALSE}
 knitr::include_graphics("../results/ridge-cv-plot.png")
@@ -129,8 +133,8 @@ read_tsv("../results/ridge-features-table.tsv") %>%
   kable(format = "latex", row.names = NA,
         booktabs = TRUE, digits = 2,
         col.names = c("Feature", "Coefficient"),
-        caption = "Standardized coefficients for features in the ridge
-        model based on the one-standard-error rule.") %>%
+        caption = "Standardized coefficients for the top 10 features in the 
+        ridge model based on the one-standard-error rule.") %>%
   kable_styling(position = "center", latex_options = "HOLD_position")
 ```
 
@@ -354,14 +358,14 @@ Below are the 62 features we used for analysis. Words written in parentheses rep
   - Birth gender (`birth_gender`): Denotes gender at birth. 1 indicates male, 2 indicates female.
   - Described gender (`described_gender`): Denotes current gender identity. 1 indicates male, 2 indicates female, 3 indicates transgender, 4 indicates none of the above, -99 indicates question seen but category not selected, -88 indicates missing or did not report.
   - Sexual orientation (`sexual_orientation`): Sexual orientation. 1 indicates gay or lesbian, 2 indicates heterosexual, 3 is bisexual, 4 is something else, 5 is doesn’t know, -99 is question seen but category not selected, -88 is missing or did not report.
-  - Age (`age`): Denotes age of individual. This is the only feature that is numerical.  
+  - Age (`age`): Denotes age of individual. This is a numerical feature.  
   
 **Economic factors** 
 
 - *Household*
   - Kids (`kids`): Indicates having kids in household (defined as 18 years or younger).
-  - Number of kids (`number_kids_household`): Number of kids in household (defined as 18 years or younger).
-  - Number of adults (`number_adults_household`): Number of adults in household (defined as 18 years or older).
+  - Number of kids (`number_kids_household`): Number of kids in household (defined as 18 years or younger). This is a numerical feature.  
+  - Number of adults (`number_adults_household`): Number of adults in household (defined as 18 years or older). This is a numerical feature.  
   - Negative childcare impact (`pandemic_child_impact`): Indicator of negative effect on childcare due to pandemic. Childcare impact includes taking unpaid leave to care for children, using vacation, sick days, or paid leave in order to care for children, cutting work hours in order to care for children, leaving a job in order to care for the children, not looking for a job in order to care for the children, supervising one or more children while working, and so on. 1 indicates yes, 2 indicates no, -99 is question seen but category not selected, -88 is missing or did not report.
 - *Employment*
   - Recent work loss (`recent_work_loss`): Indicator of recent household job loss within the past 4 weeks. 1 indicates yes, 2 indicates no, -99 is question seen but category not selected, -88 is missing or did not report.

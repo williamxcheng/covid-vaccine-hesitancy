@@ -25,8 +25,7 @@ source("../code/functions/plot_glmnet.R")            # for lasso/ridge trace plo
 vh_train = read_tsv("../data/clean/vh_train.tsv")
 
 cols = c("region", "hispanic", "race", "education_level", "marital_status", 
-         "birth_gender", "described_gender", "sexual_orientation", 
-         "number_kids_household", "number_adults_household", "had_covid", 
+         "birth_gender", "described_gender", "sexual_orientation", "had_covid", 
          "recent_work_loss", "employment", "child_tax_credit", 
          "difficulty_with_expenses", "work_onsite", "work_from_home", 
          "in_store_shopping", "eating_indoors_restaurants", 
@@ -51,7 +50,11 @@ cols = c("region", "hispanic", "race", "education_level", "marital_status",
 vh_train <-
   vh_train %>%
        mutate_each_(funs(factor(.)), cols)
+```
 
+# Logistic Regression
+
+```{r}
 # run logistic regression
 set.seed(1)
 glm_fit = glm(vaccine_hesitancy ~.,
@@ -61,13 +64,19 @@ glm_fit = glm(vaccine_hesitancy ~.,
 # save the logistic fit object
 save(glm_fit, file = "../results/glm_fit.Rda")
 
-# extract features selected by logistic fit and their coefficients
-beta_hat_std = extract_std_coefs(glm_fit, vh_train)
-beta_hat_std %>%
-   filter(coefficient != 0) %>%
-   arrange(desc(abs(coefficient))) %>% 
-   write_tsv("../results/logistic-features-table.tsv")
+summary(glm_fit)
 
+# extract features selected by logistic fit and their coefficients
+# beta_hat_std = extract_std_coefs(glm_fit, vh_train)
+# beta_hat_std %>%
+#    filter(coefficient != 0) %>%
+#    arrange(desc(abs(coefficient))) %>% 
+#    write_tsv("../results/logistic-features-table.tsv")
+```
+
+# Ridge Regression
+
+```{r}
 # run ridge regression
 set.seed(1)
 ridge_fit = cv.glmnet(vaccine_hesitancy ~.,
@@ -104,7 +113,10 @@ beta_hat_std %>%
   arrange(desc(abs(coefficient))) %>% 
   head(10) %>%
   write_tsv("../results/ridge-features-table.tsv")
+```
 
+# LASSO Regression
+```{r}
 # run lasso regression
 set.seed(1)
 lasso_fit = cv.glmnet(vaccine_hesitancy ~.,
@@ -141,7 +153,10 @@ beta_hat_std %>%
   arrange(desc(abs(coefficient))) %>% 
   head(10) %>%
   write_tsv("../results/lasso-features-table.tsv")
+```
 
+# Elastic Net Regression
+```{r}
 # run elastic net regression
 elnet_fit = cva.glmnet(vaccine_hesitancy ~ ., # formula notation, as usual 
                        nfolds = 10, # number of folds
@@ -149,11 +164,11 @@ elnet_fit = cva.glmnet(vaccine_hesitancy ~ ., # formula notation, as usual
                        type.measure = "class",
                        data = vh_train) # data to run on
 
-# save the elastic net fit object
-save(elnet_fit, file = "../results/elnet_fit.Rda")
-
 # extract best elastic net fit
 elnet_fit_best = extract_best_elnet(elnet_fit)
+
+# save the elastic net fit object
+save(elnet_fit_best, file = "../results/elnet_fit.Rda")
 
 # create elastic net CV plot
 png(width = 6, 

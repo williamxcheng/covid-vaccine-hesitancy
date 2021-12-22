@@ -9,6 +9,7 @@ output:
 library(kableExtra)                     # for printing tables
 library(tidyverse)                      # for everything else
 
+# read in cleaned data
 vh_data = read_tsv("../data/clean/vh_data.tsv")
 
 # split into train and test data

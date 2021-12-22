@@ -27,8 +27,7 @@ source("../code/functions/plot_glmnet.R")
 vh_train = read_tsv("../data/clean/vh_train.tsv")
 
 cols = c("region", "hispanic", "race", "education_level", "marital_status", 
-         "birth_gender", "described_gender", "sexual_orientation", 
-         "number_kids_household", "number_adults_household", "had_covid", 
+         "birth_gender", "described_gender", "sexual_orientation", "had_covid", 
          "recent_work_loss", "employment", "child_tax_credit", 
          "difficulty_with_expenses", "work_onsite", "work_from_home", 
          "in_store_shopping", "eating_indoors_restaurants", 
