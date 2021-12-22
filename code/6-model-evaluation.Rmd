@@ -291,10 +291,9 @@ tibble(Metric = c("Misclassification Error",
 # Elastic Net
 ```{r}
 # evaluate elastic net
-elnet_probabilities = predict(elnet_fit,
-                            alpha = elnet_fit$alpha,
-                            newdata = vh_test,
-                            s = "lambda.1se") %>% 
+elnet_probabilities = predict(elnet_fit, 
+                              alpha = elnet_fit$alpha, 
+                              newdata = vh_test, s = "lambda.1se") %>% 
   as.numeric()
 
 # apply threshold
@@ -377,7 +376,7 @@ ct_confusion_matrix <-
   ct_test %>%
   select(vaccine_hesitancy, predicted_hesitancy) %>%
   table()
-save(dt_confusion_matrix, 
+save(ct_confusion_matrix, 
      file = "../results/ct-confusion-matrix.RData")
 
 # calculate false positive rate for classification tree
@@ -420,7 +419,7 @@ tibble(Metric = c("Misclassification Error",
 ```{r}
 boosted_probabilities = predict(
   boosted_fit_optimal, 
-  n.trees = optimal_num_trees,
+  n.trees = 222,
   type = "response", 
   newdata = vh_test)
 boosted_probabilities
@@ -471,7 +470,7 @@ boosted_actual_positives =
   filter(vaccine_hesitancy == 1) %>% nrow()
 boosted_fn_rate = boosted_false_negatives / boosted_actual_positives
 
-# summarize performance metrics for elastic net regression
+# summarize performance metrics for boosted
 tibble(Metric = c("Misclassification Error", 
                   "False Positive Rate", 
                   "False Negative Rate"),

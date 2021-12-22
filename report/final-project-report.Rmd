@@ -92,7 +92,7 @@ As my response was categorical and all my features apart from age were categoric
 
 For the first model, I decided to fit a logistic regression with all 62 features to the training data. The logistic regression revealed that the following variables are significantly associated with the response at the 0.05 level: living in specific regions (South, Midwest, and West), being of Hispanic origin, being Black or Asian, having a bachelor's or graduate degree, sexuality (LGBTQ+), having a high number of people in the household, having prior exposure to COVID or potential prior exposure, having no to little difficulty with expenses, shopping in-store, receiving and using a SNAP receipt, having no private or public health insurance, living in a mobile-style home (mobile, boat, RV, van, etc.), having higher income, having to personally take on additional care for children, having at least one child attend private school or homeschool, and age. 
 
-For the logistic model, Table \@ref(tab:logistic-confusion-matrix) shows the resulting confusion matrix. The performance metrics are listed in Table \@ref(tab:logistic-evaluation), shows that the model has a misclassification error rate of 0.250. The resulting false positive rate is 0.166 and the false negative rate is 0.386, which shows that the model could have lower sensitivity and higher specificity.
+For the logistic model, Table \@ref(tab:logistic-confusion-matrix) shows the resulting confusion matrix. The performance metrics are listed in Table \@ref(tab:logistic-evaluation), shows that the model has a misclassification error rate of 0.25. The resulting false positive rate is 0.17 and the false negative rate is 0.39, which shows that the model could have lower sensitivity and higher specificity.
 
 ```{r logistic-confusion-matrix, out.width = "90%", fig.cap = "Logistic confusion matrix", fig.align='center', echo = FALSE}
 load("../results/logistic-confusion-matrix.RData")
@@ -106,7 +106,7 @@ logistic_confusion_matrix %>%
 ```{r logistic-evaluation, out.width = "90%", fig.cap = "Logistic performance", fig.align='center', message = FALSE, echo = FALSE}
 read_tsv("../results/logistic-evaluation.tsv") %>%
     kable(format = "latex", row.names = NA,
-         booktabs = TRUE, digits = 3,
+         booktabs = TRUE, digits = 2,
           col.names = c("Metric", "Classifier Performance"),
           caption = "The performance metrics of the logistic regression") %>%
     kable_styling(position = "center", latex_options = "HOLD_position")
@@ -118,7 +118,7 @@ While the logistic regression seemed to produce a model that worked well, fittin
 
 For the ridge regression, Figure \@ref(fig:ridge-CV-plot) shows the CV plot, Figure \@ref(fig:ridge-trace-plot) shows the trace plot, and Table \@ref(tab:ridge-coefficients) lists the top 10 features with the highest standardized coefficients. As seen from the trace plot and table of coefficients, the variables of age, education level, and having prior exposure to COVID seemed to have the greatest association with the response. Specifically, the older an individual is, the less likely they are to be vaccine hesitant. Those with higher educational attainment and those who did not have prior exposure to COVID were also less likely to be vaccine hesitant. Individuals with lower educational attainment as well as those with prior exposure to COVID are more likely to be vaccine hesitant.
 
-The confusion matrix can be seen in Table \@ref(tab:ridge-confusion-matrix) and the performance metrics for the ridge regression can be seen in Table \@ref(tab:ridge-evaluation). The ridge model has a misclassification rate of 0.266, which is higher than the logistic regression. According to the false positive rate of 0.136 and the false negative rate of 0.480, the ridge regression seems to have higher specificity and lower sensitivity than the logistic regression. 
+The confusion matrix can be seen in Table \@ref(tab:ridge-confusion-matrix) and the performance metrics for the ridge regression can be seen in Table \@ref(tab:ridge-evaluation). The ridge model has a misclassification rate of 0.27, which is higher than the logistic regression. According to the false positive rate of 0.14 and the false negative rate of 0.48, the ridge regression seems to have higher specificity and lower sensitivity than the logistic regression. 
 
 ```{r ridge-CV-plot, out.width = "90%", fig.cap = "Ridge CV plot.", fig.align='center', echo = FALSE}
 knitr::include_graphics("../results/ridge-cv-plot.png")
@@ -150,7 +150,7 @@ ridge_confusion_matrix %>%
 ```{r ridge-evaluation, out.width = "90%", fig.cap = "Ridge performance", fig.align='center', message = FALSE, echo = FALSE}
 read_tsv("../results/ridge-evaluation.tsv") %>%
     kable(format = "latex", row.names = NA,
-         booktabs = TRUE, digits = 3,
+         booktabs = TRUE, digits = 2,
           col.names = c("Metric", "Classifier Performance"),
           caption = "The performance metrics of the ridge regression") %>%
     kable_styling(position = "center", latex_options = "HOLD_position")
@@ -162,7 +162,7 @@ Next, I ran a LASSO regression. For the LASSO regression, Figure \@ref(fig:lasso
 
 According to the CV plot, the LASSO regression selected 77 features if lambda is selected according to the one-standard-error rule. Like the ridge regression model, the LASSO regression found that older individuals, those without prior exposure to COVID, and those with higher educational attainments are less likely to be vaccine hesitant. Furthermore, the LASSO found that individuals who did not eat indoors in restaurants are also less likely to be vaccine hesitant. Interestingly, the LASSO also found that individuals with more children in their household are more likely to be vaccine hesitant.
 
-The confusion matrix can be seen in Table \@ref(tab:lasso-confusion-matrix) and the performance metrics for the LASSO regression can be seen in Table \@ref(tab:lasso-evaluation). The LASSO model has a misclassification rate of 0.262, which is higher than the logistic regression but slightly lower than the boosted. The LASSO has a higher false positive rate when compared to the ridge regression at 0.155 and it has the lowest false negative rate of all the regression models at 0.436.
+The confusion matrix can be seen in Table \@ref(tab:lasso-confusion-matrix) and the performance metrics for the LASSO regression can be seen in Table \@ref(tab:lasso-evaluation). The LASSO model has a misclassification rate of 0.26, which is higher than the logistic regression but slightly lower than the boosted. The LASSO has a higher false positive rate when compared to the ridge regression at 0.16 and it has the lowest false negative rate of all the regression models at 0.44.
 
 ```{r lasso-CV-plot, out.width = "90%", fig.cap = "LASSO CV plot.", fig.align='center', echo = FALSE}
 knitr::include_graphics("../results/lasso-cv-plot.png")
@@ -194,7 +194,7 @@ lasso_confusion_matrix %>%
 ```{r lasso-evaluation, out.width = "90%", fig.cap = "LASSO performance", fig.align='center', message = FALSE, echo = FALSE}
 read_tsv("../results/lasso-evaluation.tsv") %>%
     kable(format = "latex", row.names = NA,
-         booktabs = TRUE, digits = 3,
+         booktabs = TRUE, digits = 2,
           col.names = c("Metric", "Classifier Performance"),
           caption = "The performance metrics of the LASSO regression") %>%
     kable_styling(position = "center", latex_options = "HOLD_position")
@@ -206,7 +206,7 @@ Finally, I ran a elastic net regression. Figure \@ref(fig:elnet-CV-plot) shows t
 
 According to the CV plot, the elastic net regression selected roughly 91 features if lambda is selected according to the one-standard-error rule. Like the other regression models, the elastic net regression found that older individuals, those without prior exposure to COVID, and those with higher educational attainments are less likely to be vaccine hesitant. Like the LASSO regression, the elastic net regression also found that individuals who did not eat indoors in restaurants are also less likely to be vaccine hesitant, and it also found that individuals with more children in their household are more likely to be vaccine hesitant.
 
-The confusion matrix can be seen in Table \@ref(tab:elnet-confusion-matrix) and the performance metrics for the elastic net regression can be seen in Table \@ref(tab:elnet-evaluation). The elastic net model has a misclassification rate of 0.297, which is the highest of all the regression models. The elastic net regression has the lowest false positive rate out of all the models at 0.070 and it has the highest false negative rate of all the models at 0.667.
+The confusion matrix can be seen in Table \@ref(tab:elnet-confusion-matrix) and the performance metrics for the elastic net regression can be seen in Table \@ref(tab:elnet-evaluation). The elastic net model has a misclassification rate of 0.30, which is the highest of all the regression models. The elastic net regression has the lowest false positive rate out of all the models at 0.07 and it has the highest false negative rate of all the models at 0.67. The elastic net regression thus has the highest specificity. 
 
 ```{r elnet-CV-plot, out.width = "90%", fig.cap = "Elastic net CV plot.", fig.align='center', echo = FALSE}
 knitr::include_graphics("../results/elnet-cv-plot.png")
@@ -238,7 +238,7 @@ elnet_confusion_matrix %>%
 ```{r elnet-evaluation, out.width = "90%", fig.cap = "Elastic net performance", fig.align='center', message = FALSE, echo = FALSE}
 read_tsv("../results/elnet-evaluation.tsv") %>%
     kable(format = "latex", row.names = NA,
-         booktabs = TRUE, digits = 3,
+         booktabs = TRUE, digits = 2,
           col.names = c("Metric", "Classifier Performance"),
           caption = "The performance metrics of the elastic net regression") %>%
     kable_styling(position = "center", latex_options = "HOLD_position")
@@ -248,11 +248,11 @@ read_tsv("../results/elnet-evaluation.tsv") %>%
 
 ### Classification trees
 
-After fitting the regression models, I decided to fit two tree-based models: classification tree and boosted model. 
+After fitting the regression models, I decided to fit two tree-based models: classification tree and boosted model.
 
-With the classification tree, I fitted and pruned an optimal tree. This tree can be seen in Figure \@ref(fig:ct-plot). There were 4 splits conducted that resulted in 5 terminal nodes. The sequence of splits that leads to the terminal node with the largest fraction of hesitant individuals is the following: 1. feature: education_level, split point: education_level = 6 or 7 (bachelor's or graduate degree), direction: frequency is not equal to 6 or 7 (i.e., right); 2. feature: age, split point: age >= 59 years, direction: age is < 59 years (i.e., right). Thus, the classification tree seems to suggest that individuals below 59 years of age with lower educational attainment are more likely to be vaccine hesitant. The splits that lead to the terminal node with the lowest fraction of hesitant individuals suggests that individuals with high educational attainment (bachelor's or graduate degree) and who did not have prior exposure to COVID are less likely to be vaccine hesitant.
+For the classification tree, I fitted the deepest possible tree and pruned it to achieve the optimal tree. This optimal tree can be seen in Figure \@ref(fig:ct-plot). There were 4 splits conducted that resulted in 5 terminal nodes. The sequence of splits that leads to the terminal node with the largest fraction of hesitant individuals is the following: 1. feature: education_level, split point: education_level = 6 or 7 (bachelor's or graduate degree), direction: frequency is not equal to 6 or 7 (i.e., right); 2. feature: age, split point: age >= 59 years, direction: age is < 59 years (i.e., right). Thus, the classification tree seems to suggest that individuals below 59 years of age with lower educational attainment are more likely to be vaccine hesitant. The splits that lead to the terminal node with the lowest fraction of hesitant individuals suggests that individuals with high educational attainment (bachelor's or graduate degree) and who did not have prior exposure to COVID are less likely to be vaccine hesitant.
 
-The confusion matrix can be seen in Table \@ref(tab:ct-confusion-matrix) and the performance metrics for the classification tree can be seen in Table \@ref(tab:ct-evaluation). The classification tree has a misclassification rate of 0.317, which is the highest of all the models. The classification tree has a false positive rate of 0.263 and a false negative rate of 0.404. 
+The confusion matrix can be seen in Table \@ref(tab:ct-confusion-matrix) and the performance metrics for the classification tree can be seen in Table \@ref(tab:ct-evaluation). The classification tree has a misclassification rate of 0.32, which is the highest of all the models. The classification tree has the highest false positive rate out of all models at 0.26 and a false negative rate of 0.40. 
 
 ```{r ct-plot, out.width = "90%", fig.cap = "Classification tree plot.", fig.align='center', echo = FALSE}
 knitr::include_graphics("../results/classification-tree-plot.png")
@@ -270,7 +270,7 @@ ct_confusion_matrix %>%
 ```{r ct-evaluation, out.width = "90%", fig.cap = "Classification tree performance", fig.align='center', message = FALSE, echo = FALSE}
 read_tsv("../results/ct-evaluation.tsv") %>%
     kable(format = "latex", row.names = NA,
-         booktabs = TRUE, digits = 3,
+         booktabs = TRUE, digits = 2,
           col.names = c("Metric", "Classifier Performance"),
           caption = "The performance metrics of the classification tree") %>%
     kable_styling(position = "center", latex_options = "HOLD_position")
@@ -278,20 +278,15 @@ read_tsv("../results/ct-evaluation.tsv") %>%
 
 ### Boosted
 
-Next, I decided to fit a boosted model.
+For my last prediction method, I decided to fit a boosted model, which aggregates the outputs of multiple classification trees and utilizes them to achieve good prediction performance. 
+
+To tune the boosted model, I experimented with the number of trees and a variety of interaction depths. I found that the optimal number of trees was between 200 to 400, and I tested the interaction depths of 1, 2, 3, and 4 (all else equal). As per the CV plot seen in Figure \@ref(fig:boosted-cv-plot), I observed that the model with interaction depth 3 attains the miniumum CV error with 954 trees.
 
 ```{r boosted-cv-plot, out.width = "90%", fig.cap = "The CV error for the optimal boosted model", fig.align='center', echo = FALSE}
 knitr::include_graphics("../results/boosted-cv-plot.png")
 ```
 
-```{r boosted-confusion-matrix, out.width = "90%", fig.cap = "Boosted confusion matrix.", fig.align='center', echo = FALSE}
-load("../results/boosted-confusion-matrix.RData")
-boosted_confusion_matrix %>%
-  kable(format = "latex", row.names = NA,
-      booktabs = TRUE,
-      caption = "The confusion matrix for the boosted model") %>%
-  kable_styling(latex_options = "HOLD_position")
-```
+With the tuned boosted model, I assessed variable importance through purity-based importance and partial dependence plots. For purity-based importance, Table \@ref(tab:boosted-features) shows the top 10 variables with the highest variable influence scores. The top variable is age, followed by education level, previous exposure to COVID, income, difficulty with expenses, eating indoors in restaurants, having anxiety, working from home, type of housing, and race. 
 
 ```{r boosted-features, message = FALSE, echo = FALSE}
 read_tsv("../results/boosted-var-summary.tsv") %>%
@@ -302,10 +297,34 @@ read_tsv("../results/boosted-var-summary.tsv") %>%
     kable_styling(position = "center", latex_options = "HOLD_position")
 ```
 
+I then created partial dependence plots for the three most important variables: age, education level, and previous exposure to COVID. Figure \@ref(fig:boosted-age-var-plot) shows the partial dependence plot for age. From the plot, it can be seen that as age decreases, the likelihood of vaccine hesitancy increases. Figure \@ref(fig:boosted-education-var-plot) contains the partial dependence plot for education, and it shows that lower educational attainment is associated with vaccine hesitancy. Finally, Figure \@ref(fig:boosted-covid-var-plot) shows the partial dependence plot for prior exposure to COVID. This plot shows that individuals who have tested positive for COVID or individuals who are unsure about testing positive for COVID have a higher likelihood of vaccine hesitancy. 
+
+```{r boosted-age-var-plot, out.width = "80%", fig.cap = "The partial dependence plot for age", fig.align='center', echo = FALSE}
+knitr::include_graphics("../results/boosted-age-var-plot.png")
+```
+```{r boosted-education-var-plot, out.width = "80%", fig.cap = "The partial dependence plot for education level", fig.align='center', echo = FALSE}
+knitr::include_graphics("../results/boosted-education-var-plot.png")
+```
+
+```{r boosted-covid-var-plot, out.width = "80%", fig.cap = "The partial dependence plot for prior COVID exposure", fig.align='center', echo = FALSE}
+knitr::include_graphics("../results/boosted-covid-var-plot.png")
+```
+
+The confusion matrix can be seen in Table \@ref(tab:boosted-confusion-matrix) and the performance metrics for the boosted model can be seen in Table \@ref(tab:boosted-evaluation). The boosted model has a misclassification rate of 0.26, which is the highest of all the models. The boosted model has the highest false positive rate out of all models at 0.18 and a false negative rate of 0.39. 
+
+```{r boosted-confusion-matrix, out.width = "90%", fig.cap = "Boosted confusion matrix.", fig.align='center', echo = FALSE}
+load("../results/boosted-confusion-matrix.RData")
+boosted_confusion_matrix %>%
+  kable(format = "latex", row.names = NA,
+      booktabs = TRUE,
+      caption = "The confusion matrix for the boosted model") %>%
+  kable_styling(latex_options = "HOLD_position")
+```
+
 ```{r boosted-evaluation, out.width = "90%", fig.cap = "Boosted performance", fig.align='center', message = FALSE, echo = FALSE}
 read_tsv("../results/boosted-evaluation.tsv") %>%
     kable(format = "latex", row.names = NA,
-         booktabs = TRUE, digits = 3,
+         booktabs = TRUE, digits = 2,
           col.names = c("Metric", "Classifier Performance"),
           caption = "The performance metrics of the boosted model") %>%
     kable_styling(position = "center", latex_options = "HOLD_position")
@@ -355,12 +374,12 @@ To compensate for the limitations listed above, I believe that more extensive an
 
 # Appendix: Descriptions of features {#appendix}
 
-Below are the 62 features we used for analysis. Words written in parentheses represent variable names. Unless noted otherwise, all variables are categorical.
+Below are the 62 features that I used for analysis. Words written in parentheses represent variable names. All variables are categorical unless otherwise noted.
 
 **Social factors:** 
 
 - *Demographics*
-  - Region (`region`) Indicates the individual's Census Region. 1 indicates Northeast (including the states of Connecticut, Maine, Massachusetts, New Hampshire, New Jersey, New York, Pennsylvania, Rhode Island, and Vermont), 2 indicates South (Alabama, Arkansas, Delaware, District of Columbia, Florida, Georgia, Kentucky, Louisiana, Maryland, Mississippi, North Carolina, Oklahoma, South Carolina, Tennessee, Texas, Virginia, and West Virginia), 3 indicates Midwest (Indiana, Illinois, Iowa, Kansas, Michigan, Minnesota, Missouri, Nebraska, North Dakota, Ohio, South Dakota, and Wisconsin), and 4 indicates West (Alaska, Arizona, California, Colorado, Hawaii, Idaho, Montana, Nevada, New Mexico, Oregon, Utah, Washington, and Wyoming)
+  - Region (`region`): Indicates the individual's Census Region. 1 indicates Northeast (including the states of Connecticut, Maine, Massachusetts, New Hampshire, New Jersey, New York, Pennsylvania, Rhode Island, and Vermont), 2 indicates South (Alabama, Arkansas, Delaware, District of Columbia, Florida, Georgia, Kentucky, Louisiana, Maryland, Mississippi, North Carolina, Oklahoma, South Carolina, Tennessee, Texas, Virginia, and West Virginia), 3 indicates Midwest (Indiana, Illinois, Iowa, Kansas, Michigan, Minnesota, Missouri, Nebraska, North Dakota, Ohio, South Dakota, and Wisconsin), and 4 indicates West (Alaska, Arizona, California, Colorado, Hawaii, Idaho, Montana, Nevada, New Mexico, Oregon, Utah, Washington, and Wyoming)
   - Race (`race`): Denotes race. 1 indicates White, 2 indicates Black, 3 indicates Asian, 4 indicates any other race or race in combination.
   - Hispanic (`hispanic`): Indicator of Hispanic origin. 1 indicates not of Hispanic origin, 2 indicates of Hispanic origin.
   - Education_level (`education_level`): Denotes educational attainment. 1 indicates less than high school, 2 indicates some high school, 3 indicates high school graduate or equivalent (for example GED), 4 indicates some college but degree not received or is in progress, 5 indicates associate’s degree (for example AA, AS), 6 indicates bachelor's degree (for example BA, BS, AB), 7 indicates graduate degree (for example master's, professional, doctorate).
@@ -374,8 +393,8 @@ Below are the 62 features we used for analysis. Words written in parentheses rep
 
 - *Household*
   - Kids (`kids`): Indicates having kids in household (defined as 18 years or younger).
-  - Number of kids (`number_kids_household`): Number of kids in household (defined as 18 years or younger). This is a numerical feature.  
-  - Number of adults (`number_adults_household`): Number of adults in household (defined as 18 years or older). This is a numerical feature.  
+  - Number of kids (`number_kids_household`): Number of kids in household (defined as 18 years or younger). This is a numerical feature.
+  - Number of adults (`number_adults_household`): Number of adults in household (defined as 18 years or older). This is a numerical feature.
   - Negative childcare impact (`pandemic_child_impact`): Indicator of negative effect on childcare due to pandemic. Childcare impact includes taking unpaid leave to care for children, using vacation, sick days, or paid leave in order to care for children, cutting work hours in order to care for children, leaving a job in order to care for the children, not looking for a job in order to care for the children, supervising one or more children while working, and so on. 1 indicates yes, 2 indicates no, -99 is question seen but category not selected, -88 is missing or did not report.
 - *Employment*
   - Recent work loss (`recent_work_loss`): Indicator of recent household job loss within the past 4 weeks. 1 indicates yes, 2 indicates no, -99 is question seen but category not selected, -88 is missing or did not report.
