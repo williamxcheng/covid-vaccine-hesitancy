@@ -30,6 +30,7 @@ vh_data_raw = read_tsv(file = "../data/raw/vh_data_raw.tsv")
 ```{r}
 vh_data <-
   vh_data_raw %>%
+  # consolidate and reduce levels in several variables
   mutate(KIDS = if_else(KIDS_LT5Y == 1 | KIDS_5_11Y == 1 | KIDS_12_17Y == 1, 1, 
                              if_else(KIDS_LT5Y == -99 & KIDS_5_11Y == -99 & 
                                        KIDS_12_17Y == -99, 0, -88))) %>%
@@ -88,6 +89,7 @@ vh_data <-
   mutate(PS_YN = ifelse(TNUM_PS > 0, 1, 
                             ifelse(TNUM_PS == -99 | TNUM_PS == 0, 
                                    2, -88))) %>%
+  # construct response variable
   mutate(VHESITANT = if_else(GETVACRV == 3 | 
                                GETVACRV == 4 | 
                                GETVACRV == 5, 1, 
@@ -96,10 +98,13 @@ vh_data <-
                                     RECVDVACC == 1, 0, 
                                     if_else(RECVDVACC == 2 & 
                                               GETVACRV == -88, 1, NA_real_)))) %>%
+  # construct age variable
   mutate(AGE = 2021 - TBIRTH_YEAR) %>%
-  mutate(INCOME = INCOME) %>%
-  select(-SCRAM, -WEEK, -EST_MSA, -ABIRTH_YEAR, -AGENID_BIRTH, 
-         -TBIRTH_YEAR, -AHISPANIC, -ARACE, -AEDUC, -AHHLD_NUMPER, -AHHLD_NUMKID,
+  # filter out missing income values
+  filter(INCOME != -88) %>%
+  # remove duplicate or unconsolidated variables
+  select(-SCRAM, -WEEK, -EST_MSA, -ABIRTH_YEAR, -AGENID_BIRTH, -TBIRTH_YEAR, 
+         -AHISPANIC, -ARACE, -AEDUC, -AHHLD_NUMPER, -AHHLD_NUMKID,
          -THHLD_NUMPER, -KIDS_LT5Y, -KIDS_5_11Y, -KIDS_12_17Y, -ENRPUBCHK, 
          -ENRPRVCHK, -ENRHMSCHK, -TENROLLPUB, -TENROLLPRV, -TENROLLHMSCH, 
          -ENROLLNONE, -ACTVDUTY1, -ACTVDUTY2, -ACTVDUTY3, -ACTVDUTY4, -ACTVDUTY5,
@@ -109,27 +114,24 @@ vh_data <-
          -CTCSPND3, -CTCSPND4, -CTCSPND5, -CTCSPND6, -CTCSPND7, -CTCSPND8, 
          -CTCSPND9, -CTCSPND10, -CTCSPND11, -CTCSPND12, -CTCSPND13, -CTCSPND14, 
          -CTCSPND15, -CTCSPND16, -CTCSPND17,-SPND_SRC1, -SPND_SRC2, -SPND_SRC3, 
-         -SPND_SRC4, -SPND_SRC5,
-         -SPND_SRC6, -SPND_SRC7, -SPND_SRC8, -SPND_SRC9, -SPND_SRC9, 
+         -SPND_SRC4, -SPND_SRC5, -SPND_SRC6, -SPND_SRC7, -SPND_SRC8, -SPND_SRC9, 
          -SPND_SRC10,-SPND_SRC11, -SPND_SRC12, -CHILDFOOD, -FOODRSNRV1, 
          -FOODRSNRV2, -FOODRSNRV3, -FOODRSNRV4, -SCHLFDHLP1, -SCHLFDHLP2,
          -SCHLFDHLP3, -SCHLFDHLP4, -NOSCHLFDHLP, -HLTHINS1, -HLTHINS2, 
          -HLTHINS3, -HLTHINS4, -HLTHINS5, -HLTHINS6, -HLTHINS7, -HLTHINS8,
-         -TH_ADLT_PHON, -TH_ADLT_VID,
-         -TH_CHLD_PHON, -TH_CHLD_VID, -SUMMER_ED1, -SUMMER_ED2, -SUMMER_ED3, 
-         -SUMMER_ED4, -PSCHNG1, -PSCHNG2, -PSCHNG3, -PSCHNG4, -PSCHNG5, -PSCHNG6,
-         -PSCHNG7, -PSWHYCHG1, -PSWHYCHG2, -PSWHYCHG3, -PSWHYCHG4, -PSWHYCHG5,
-         -PSWHYCHG6, -PSWHYCHG7, -PSWHYCHG8, -PSWHYCHG9,
-         -WHYNORV1, -WHYNORV2, -WHYNORV3, -WHYNORV4, -WHYNORV5, -WHYNORV6,
-         -WHYNORV7, -WHYNORV8, -WHYNORV9,-WHYNORV10, -WHYNORV11, -WHYNORV12,
-         -WHYNORV13, -KIDWHYNO1, -KIDWHYNO2, -KIDWHYNO3, -KIDWHYNO4, -KIDWHYNO5, 
-         -KIDWHYNO6, -KIDWHYNO7, -KIDWHYNO8, -KIDWHYNO9, -KIDWHYNO10, 
-         -KIDWHYNO11, -KIDWHYNO12, -KIDWHYNO13, -KIDWHYNO14, -KIDDOSES, 
-         -KIDGETVAC, -PWEIGHT, -HWEIGHT, -TNUM_PS, -TMNTHSBHND, -RECVDVACC, 
-         -DOSESRV, -ENRGY_BILL, -GETVACRV, -EST_ST) %>% 
-  filter(INCOME != -88) %>%
+         -TH_ADLT_PHON, -TH_ADLT_VID, -TH_CHLD_PHON, -TH_CHLD_VID, -SUMMER_ED1, 
+         -SUMMER_ED2, -SUMMER_ED3, -SUMMER_ED4, -PSCHNG1, -PSCHNG2, -PSCHNG3, 
+         -PSCHNG4, -PSCHNG5, -PSCHNG6, -PSCHNG7, -PSWHYCHG1, -PSWHYCHG2, 
+         -PSWHYCHG3, -PSWHYCHG4, -PSWHYCHG5, -PSWHYCHG6, -PSWHYCHG7, -PSWHYCHG8, 
+         -PSWHYCHG9, -WHYNORV1, -WHYNORV2, -WHYNORV3, -WHYNORV4, -WHYNORV5, 
+         -WHYNORV6, -WHYNORV7, -WHYNORV8, -WHYNORV9,-WHYNORV10, -WHYNORV11, 
+         -WHYNORV12, -WHYNORV13, -KIDWHYNO1, -KIDWHYNO2, -KIDWHYNO3, -KIDWHYNO4, 
+         -KIDWHYNO5, -KIDWHYNO6, -KIDWHYNO7, -KIDWHYNO8, -KIDWHYNO9, 
+         -KIDWHYNO10, -KIDWHYNO11, -KIDWHYNO12, -KIDWHYNO13, -KIDWHYNO14, 
+         -KIDDOSES, -KIDGETVAC, -PWEIGHT, -HWEIGHT, -TNUM_PS, -TMNTHSBHND, 
+         -RECVDVACC, -DOSESRV, -ENRGY_BILL, -GETVACRV, -EST_ST) %>% 
+  # rename final variables
   rename(region = REGION, 
-    #state = EST_ST,
        hispanic = RHISPANIC, 
        race = RRACE, 
        education_level = EEDUC, 
@@ -193,8 +195,10 @@ vh_data <-
        children_homeschool = ENROLLHMSCH,
        post_secondary_classes = PS_YN
        ) %>%
+  # drop any NA values
   drop_na()
 
+# set variable types as factors
 cols = c("region", "hispanic", "race", "education_level", "marital_status", 
          "birth_gender", "described_gender", "sexual_orientation", 
          "number_kids_household", "number_adults_household", "had_covid", 
@@ -223,20 +227,21 @@ vh_data <-
   vh_data %>%
        mutate_each_(funs(factor(.)), cols)
 
-# utilize downsampling to adjust for class imbalance
+# subset hesitant data
 vh_data_positive <-
   vh_data %>%
   filter(vaccine_hesitancy == 1)
 
+# subset non-hesitant data
 vh_data_negative <-
   vh_data %>%
   filter(vaccine_hesitancy == 0)
 
+# utilize downsampling to adjust for class imbalance
 set.seed(5) # seed set for reproducibility
 vh_data_negative <- 
   vh_data_negative %>%
   sample_frac(.15)
-
 vh_data <- 
   rbind(vh_data_negative, vh_data_positive)
 
