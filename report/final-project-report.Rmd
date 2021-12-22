@@ -94,7 +94,7 @@ For the first model, I decided to fit a logistic regression with all 62 features
 
 For the logistic model, Table \@ref(tab:logistic-confusion-matrix) shows the resulting confusion matrix. The performance metrics are listed in Table \@ref(tab:logistic-evaluation), shows that the model has a misclassification error rate of 0.250. The resulting false positive rate is 0.166 and the false negative rate is 0.386, which shows that the model could have lower sensitivity and higher specificity.
 
-```{r logistic-confusion-matrix, out.width = "90%", fig.cap = "Lasso CV plot.", fig.align='center', echo = FALSE}
+```{r logistic-confusion-matrix, out.width = "90%", fig.cap = "Logistic confusion matrix", fig.align='center', echo = FALSE}
 load("../results/logistic-confusion-matrix.RData")
 logistic_confusion_matrix %>%
   kable(format = "latex", row.names = NA,
@@ -112,11 +112,11 @@ read_tsv("../results/logistic-evaluation.tsv") %>%
     kable_styling(position = "center", latex_options = "HOLD_position")
 ```
 
-### Penalized regression
+### Ridge regression
 
 While the logistic regression seemed to produce a model that worked well, fitting a logistic model with many explanatory variables can lead to high variance and suboptimal predictions. Thus, I decided to build and evaluate shrinkage models with the aim of reducing variance and obtaining a more accurate model. I ran three cross-validated regressions for which optimal values of lambda were chosen according to the one-standard-error rule: ridge regression, LASSO (Least Absolute Shrinkage and Selection Operator) regression, and elastic net regression. 
 
-For the ridge regression, Figure \@ref(fig:ridge-CV-plot) shows the CV plot, Figure \@ref(fig:ridge-trace-plot) shows the trace plot, and Table \@ref(tab:ridge-coefficients) lists the top 10 features with the highest standardized coefficients. As seen from the trace plot and table of coefficients, the variables of age, education level, and having prior exposure to COVID seemed to have the greatest association with the response. 
+For the ridge regression, Figure \@ref(fig:ridge-CV-plot) shows the CV plot, Figure \@ref(fig:ridge-trace-plot) shows the trace plot, and Table \@ref(tab:ridge-coefficients) lists the top 10 features with the highest standardized coefficients. As seen from the trace plot and table of coefficients, the variables of age, education level, and having prior exposure to COVID seemed to have the greatest association with the response. Specifically, the older an individual is, the less likely they are to be vaccine hesitant. Those with higher educational attainment and those who did not have prior exposure to COVID were also less likely to be vaccine hesitant. Individuals with lower educational attainment as well as those with prior exposure to COVID are more likely to be vaccine hesitant.
 
 The confusion matrix can be seen in Table \@ref(tab:ridge-confusion-matrix) and the performance metrics for the ridge regression can be seen in Table \@ref(tab:ridge-evaluation). The ridge model has a misclassification rate of 0.266, which is higher than the logistic regression. According to the false positive rate of 0.136 and the false negative rate of 0.480, the ridge regression seems to have higher specificity and lower sensitivity than the logistic regression. 
 
@@ -156,15 +156,19 @@ read_tsv("../results/ridge-evaluation.tsv") %>%
     kable_styling(position = "center", latex_options = "HOLD_position")
 ```
 
-For the lasso, Figure \@ref(fig:lasso-CV-plot) shows the CV plot, Figure \@ref(fig:lasso-trace-plot) shows the trace plot, and Table \@ref(tab:lasso-coefficients) shows the selected features and their coefficients. Table \@ref(tab:ridge-evaluation) shows that the model has a misclassification rate of [].
+### LASSO regression
 
-[Interpretation of lasso omitted from this template. Other penalized regression methods omitted from this template.]
+Next, I ran a LASSO regression. For the LASSO regression, Figure \@ref(fig:lasso-CV-plot) shows the CV plot, Figure \@ref(fig:lasso-trace-plot) shows the trace plot, and Table \@ref(tab:lasso-coefficients) shows the top 10 features with the largest standardized coefficients. 
 
-```{r lasso-CV-plot, out.width = "90%", fig.cap = "Lasso CV plot.", fig.align='center', echo = FALSE}
+According to the CV plot, the LASSO regression selected 77 features if lambda is selected according to the one-standard-error rule. Like the ridge regression model, the LASSO regression found that older individuals, those without prior exposure to COVID, and those with higher educational attainments are less likely to be vaccine hesitant. Furthermore, the LASSO found that individuals who did not eat indoors in restaurants are also less likely to be vaccine hesitant. Interestingly, the LASSO also found that individuals with more children in their household are more likely to be vaccine hesitant.
+
+The confusion matrix can be seen in Table \@ref(tab:lasso-confusion-matrix) and the performance metrics for the LASSO regression can be seen in Table \@ref(tab:lasso-evaluation). The LASSO model has a misclassification rate of 0.262, which is higher than the logistic regression but slightly lower than the boosted. The LASSO has a higher false positive rate when compared to the ridge regression at 0.155 and it has the lowest false negative rate of all the regression models at 0.436.
+
+```{r lasso-CV-plot, out.width = "90%", fig.cap = "LASSO CV plot.", fig.align='center', echo = FALSE}
 knitr::include_graphics("../results/lasso-cv-plot.png")
 ```
 
-```{r lasso-trace-plot, out.width = "90%", fig.cap = "Lasso trace plot.", fig.align='center', echo = FALSE}
+```{r lasso-trace-plot, out.width = "90%", fig.cap = "LASSO trace plot.", fig.align='center', echo = FALSE}
 knitr::include_graphics("../results/lasso-trace-plot.png")
 ```
 
@@ -187,7 +191,7 @@ lasso_confusion_matrix %>%
   kable_styling(latex_options = "HOLD_position")
 ```
 
-```{r lasso-evaluation, out.width = "90%", fig.cap = "Lasso performance", fig.align='center', message = FALSE, echo = FALSE}
+```{r lasso-evaluation, out.width = "90%", fig.cap = "LASSO performance", fig.align='center', message = FALSE, echo = FALSE}
 read_tsv("../results/lasso-evaluation.tsv") %>%
     kable(format = "latex", row.names = NA,
          booktabs = TRUE, digits = 3,
@@ -196,13 +200,19 @@ read_tsv("../results/lasso-evaluation.tsv") %>%
     kable_styling(position = "center", latex_options = "HOLD_position")
 ```
 
-For the elastic net, Figure \@ref(fig:elnet-CV-plot) shows the CV plot, Figure \@ref(fig:elnet-trace-plot) shows the trace plot, and Table \@ref(tab:elnet-coefficients) shows the selected features and their coefficients. Table \@ref(tab:elnet-evaluation) shows that the model has a misclassification rate of [].
+### Elastic net regression
+
+Finally, I ran a elastic net regression. Figure \@ref(fig:elnet-CV-plot) shows the CV plot, Figure \@ref(fig:elnet-trace-plot) shows the trace plot, and Table \@ref(tab:elnet-coefficients)  shows the top 10 features with the largest standardized coefficients.
+
+According to the CV plot, the elastic net regression selected 82 features if lambda is selected according to the one-standard-error rule. Like the other regression models, the elastic net regression found that older individuals, those without prior exposure to COVID, and those with higher educational attainments are less likely to be vaccine hesitant. Like the LASSO regression, the elastic net regression also found that individuals who did not eat indoors in restaurants are also less likely to be vaccine hesitant, and it also found that individuals with more children in their household are more likely to be vaccine hesitant.
+
+Table \@ref(tab:elnet-evaluation) shows that the model has a misclassification rate of [].
 
 ```{r elnet-CV-plot, out.width = "90%", fig.cap = "Elastic net CV plot.", fig.align='center', echo = FALSE}
 knitr::include_graphics("../results/elnet-cv-plot.png")
 ```
 
-```{r elnet-trace-plot, out.width = "90%", fig.cap = "Lasso trace plot.", fig.align='center', echo = FALSE}
+```{r elnet-trace-plot, out.width = "90%", fig.cap = "Elastic net trace plot.", fig.align='center', echo = FALSE}
 knitr::include_graphics("../results/elnet-trace-plot.png")
 ```
 
