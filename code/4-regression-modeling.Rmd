@@ -62,11 +62,11 @@ glm_fit = glm(vaccine_hesitancy ~.,
 save(glm_fit, file = "../results/glm_fit.Rda")
 
 # extract features selected by logistic fit and their coefficients
-# beta_hat_std = extract_std_coefs(glm_fit, vh_train)
-# beta_hat_std %>%
-#   filter(coefficient != 0) %>%
-#   arrange(desc(abs(coefficient))) %>% 
-#   write_tsv("../results/logistic-features-table.tsv")
+beta_hat_std = extract_std_coefs(glm_fit, vh_train)
+beta_hat_std %>%
+   filter(coefficient != 0) %>%
+   arrange(desc(abs(coefficient))) %>% 
+   write_tsv("../results/logistic-features-table.tsv")
 
 # run ridge regression
 set.seed(1)
