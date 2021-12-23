@@ -253,4 +253,30 @@ boosted_var_summary <-
   head(10) %>%
   write_tsv("../results/boosted-var-summary.tsv")
 ```
+```{r}
+png(width = 6, 
+    height = 4,
+    res = 300,
+    units = "in", 
+    filename = "../results/boosted-age-var-plot.png")
+plot(boosted_fit_optimal, i.var = "age", n.trees = optimal_num_trees)
+dev.off()
+
+png(width = 6, 
+    height = 4,
+    res = 300,
+    units = "in", 
+    filename = "../results/boosted-education-var-plot.png")
+plot(boosted_fit_optimal, i.var = "education_level", 
+     n.trees = optimal_num_trees)
+dev.off()
+
+png(width = 6, 
+    height = 4,
+    res = 300,
+    units = "in", 
+    filename = "../results/boosted-covid-var-plot.png")
+plot(boosted_fit_optimal, i.var = "had_covid", n.trees = optimal_num_trees)
+dev.off()
+```
 

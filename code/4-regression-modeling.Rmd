@@ -168,11 +168,11 @@ elnet_fit = cva.glmnet(vaccine_hesitancy ~ ., # formula notation, as usual
                        type.measure = "class",
                        data = vh_train) # data to run on
 
-# extract best elastic net fit
-elnet_fit_best = extract_best_elnet(elnet_fit)
-
 # save the elastic net fit object
-save(elnet_fit_best, file = "../results/elnet_fit.Rda")
+save(elnet_fit, file = "../results/elnet_fit.Rda")
+
+# extract elastic net fit
+elnet_best_fit = extract_best_elnet(elnet_fit)
 
 # create elastic net CV plot
 png(width = 6, 
@@ -184,7 +184,7 @@ plot(elnet_fit_best)
 dev.off()
 
 # create elastic net trace plot
-p = plot_glmnet(elnet_fit_best, vh_train, features_to_plot = 6)
+p = plot_glmnet(elnet_best_fit, vh_train, features_to_plot = 6)
 ggsave(filename = "../results/elnet-trace-plot.png", 
        plot = p, 
        device = "png", 
@@ -192,14 +192,14 @@ ggsave(filename = "../results/elnet-trace-plot.png",
        height = 4)
 
 # extract features selected by elastic net fit and their coefficients
-beta_hat_std = extract_std_coefs(elnet_fit_best, vh_train)
+beta_hat_std = extract_std_coefs(elnet_best_fit, vh_train)
 beta_hat_std %>%
   filter(coefficient != 0) %>%
   arrange(desc(abs(coefficient))) %>% 
   head(10) %>%
   write_tsv("../results/elnet-features-table.tsv")
 
-elnet_num_features = elnet_fit_best$nzero[lasso_fit$lambda == lasso_fit$lambda.1se]
+elnet_num_features = elnet_best_fit$nzero[lasso_fit$lambda == lasso_fit$lambda.1se]
 sprintf("The number of features (excluding intercept) selected (1se): %i",
         elnet_num_features)
 ```

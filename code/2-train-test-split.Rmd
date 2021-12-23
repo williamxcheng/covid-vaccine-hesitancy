@@ -6,6 +6,7 @@ output:
 ---
 
 ```{r}
+# import libraries
 library(kableExtra)                     # for printing tables
 library(tidyverse)                      # for everything else
 

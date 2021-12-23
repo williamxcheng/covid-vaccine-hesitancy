@@ -26,7 +26,7 @@ The code to reproduce this report is available [on Github](https://github.com/wi
 
 **Problem.** Despite the growing body of research focused on understanding COVID-19 vaccine hesitancy, there is still much to be learned about the factors that make some individuals more susceptible to COVID-19 vaccine hesitancy. Hence, for my final project, I decided to look into a wide range of social, economic, health, and lifestyle factors and analyze which factors were most predictive of vaccine hesitancy in individuals. In this project, I analyzed data from the most recent collection period (September 29, 2021 - October 11, 2021) of the Household Pulse Survey conducted by the U.S. Census. While only analyzing data from this period inherently limits my results, utilizing data within this short timeframe generally controls for a variety of external events that can affect vaccine hesitancy such as federal/employer vaccine mandates or news about the spread of new COVID variants. 
 
-**Data.** My dataset pulled data from the Household Pulse Survey, a program by the U.S. Census. My explanatory variables span four main categories of factors: demographics (e.g. age, ethnicity, marital status), health (e.g. anxiety, depression), economic factors (e.g. health insurance coverage, income), and lifestyle factors (e.g. working from home, eating at restaurants). My primary response variable of interest was the hesitancy to get the COVID-19 vaccine.
+**Data.** My dataset pulled data from the Household Pulse Survey, a program by the U.S. Census. My explanatory variables span four main categories of factors: social (e.g. age, ethnicity, marital status), health (e.g. anxiety, depression), economic factors (e.g. health insurance coverage, income), and lifestyle factors (e.g. working from home, eating at restaurants). My primary response variable of interest was the hesitancy to get the COVID-19 vaccine.
 
 **Analysis.** Before exploring the data or running any analyses, I split the data into a training dataset and a test dataset, with the training dataset used for building the predictive models and the test dataset used for assessing and comparing model performance. Then, I explored the data to check for class imbalance and to assess correlations between variables and between variables and the response. In order to build an optimal predictive model, I constructed six different models: logistic regression, ridge regression, LASSO regression, elastic net regression, classification tree, and boosting. Of the regression models, logistic regression had the lowest misclassification rate and of the tree-based models, the boosted model had the lowest misclassification rate. The logistic regression and the boosted model had near-identical misclassification rates.
 
@@ -50,17 +50,17 @@ My dataset originated from the Household Pulse Survey conducted by the U.S. Cens
 
 ## Data cleaning
 
-My first task in the data cleaning phase of the project was clean up some of the features in the raw dataset. This included the reduction in levels of several factor features, as well as the recoding of my response variable. Finally, I realized that there was a significant class imbalance in the raw data. The ratio of observations who were not hesitant to observations who were hesitant was 11 to 1. Thus, I utilized down-sampling so the ratio then became a more manageable 1.65 to 1. 
+My first task in the data cleaning phase of the project was clean up the features in the raw dataset. As the Household Pulse Survey was conducted as a survey, the levels of some variables were spread out through multiple columns of the data, creating redundancy issues. I reorganized several variables and I reduced the levels of several factor features. The second task in the data cleaning phase was the recoding of my response variable, which is further explained in the Response Variable section below. Next, I realized that there was a significant class imbalance in the raw data. The ratio of observations who were not hesitant to observations who were hesitant was 11 to 1. Thus, I utilized down-sampling so the ratio then became a more manageable 1.65 to 1. 
 
 ## Data description
 
 ### Observations
 
-My dataset had a total of 10,230 observations, each corresponding to an individual respondent.
+My cleaned dataset contained a total of 10,230 observations, each corresponding to an individual respondent.
 
 ### Response Variable
 
-My binary response variable signifies if an individual is hesitant or not hesitant about getting vaccinated for COVID-19.  I created this variable from two key measurements related to vaccine hesitancy that the raw dataset collected. The first measured if the respondent had already taken the COVID-19 vaccine, and if not, the second measured if the respondent intended on taking the vaccine. The second measurement had five separate levels: definitely, probably, unsure, probably not, or definitely not getting vaccinated. Thus, my recoded response variable was binary: an individual could be Hesitant (1) or Not Hesitant (0) about getting vaccinated. An observation was considered hesitant if the respondent had not taken the vaccine, and signified that they were unsure about getting vaccinated, probably not going to get vaccinated, or definitely not going to get vaccinated. An observation was considered not hesitant if the respondent had taken at least one dose of the vaccine or signified that they were definitely or probably going to get vaccinated.
+My binary response variable signifies if an individual is hesitant or not hesitant about getting vaccinated for COVID-19. I created this variable from two key measurements related to vaccine hesitancy that the Household Pulse Survey collected. The first measured if the respondent had already taken the COVID-19 vaccine, and if not, the second measured if the respondent intended on taking the vaccine. The second measurement had five separate levels: definitely, probably, unsure, probably not, or definitely not getting vaccinated. Thus, my recoded response variable was categorical: an individual could be Hesitant (1) or Not Hesitant (0) about getting vaccinated for COVID-19. An observation was considered hesitant if the respondent had not taken the vaccine and signified that they were unsure about getting vaccinated, probably not going to get vaccinated, or definitely not going to get vaccinated. An observation was considered not hesitant if the respondent had received at least one dose of the vaccine or signified that they were probably or definitely going to get vaccinated.
 
 ### Features
 
@@ -74,15 +74,49 @@ I split my dataset into two subsets: a training dataset used for building the pr
 
 ### Response
 
-I first sought to understand the distribution of the response variable in the training dataset. As seen in the histogram of responses in Figure \@ref(fig:response-histogram), after utilizing my downsampling method to adjust for class imbalance, there are 3082 observations that are vaccine hesitant, comprising 37.7% of the data, while there are 5102 observations that are not hesitant, comprising 62.3% of the data.
+I first sought to understand the distribution of the response variable in the training dataset. As seen in Figure \@ref(fig:response-bar), after downsampling  to adjust for class imbalance, there are 3082 observations that are vaccine hesitant, comprising 37.7% of the data, while there are 5102 observations that are not hesitant, comprising 62.3% of the data.
 
-```{r response-histogram, out.width = "80%", fig.cap = "Distribution of responses", fig.align='center', echo = FALSE}
-knitr::include_graphics("../results/response-histogram.png")
+```{r response-bar, out.width = "80%", fig.cap = "Distribution of responses", fig.align='center', echo = FALSE}
+knitr::include_graphics("../results/response-bar.png")
 ```
 
 ### Features
 
-As my response was categorical and all my features apart from age were categorical with more than two levels, it was difficult to conduct additional preliminary analyses on the relationships between the response and the features.
+Three of my features were numerical (age, number of kids in household, and number of adults in household), and so I sought to look the relationship between these features. A correlation plot can be seen in Figure \@ref(fig:num-corr-plot), and it seems to suggest that there a slight negative correlation between age and the number of children in a household. 
+
+```{r num-corr-plot, out.width = "80%", fig.cap = "Relationship between numerical features", fig.align='center', echo = FALSE}
+knitr::include_graphics("../results/num-corr-plot.png")
+```
+To explore the relationship between these three numerical variables and the binary response, I constructed three boxplots, which can be seen in Figure \@ref(fig:feature-boxplots). In the first plot between vaccine hesitancy and age, the median age of those who are hesitant (46 years) is lower than the median age of those who are not hesitant (58 years). In the second plot between hesitancy and the number of children in the household, although the median number of children of both hesitant and non-hesitant individuals was both 0, there was a larger interquartile range for individuals who are hesitant. The same analysis applied to the third boxplot between hesitancy and the number of adults in the household, as the median number of adults in the household was around 2 for both hesitant and not hesitant populations, there was a larger interquartile range for individuals who are hesitant.
+
+```{r feature-boxplots, out.width = "80%", fig.cap = "Relationship between numerical features", fig.align='center', echo = FALSE}
+knitr::include_graphics("../results/feature-boxplots.png")
+```
+
+As my response was categorical and all my features apart from three (age, number of kids in household, and number of adults in household) were categorical with more than two levels, I decided to construct a Cramer's V association matrix for all non-numerical factors, grouped by the different categories of factors: social, economic, health, and lifestyle. 
+
+The matrix for social factors can be seen in Figure \@ref(fig:social-vars-cramers). The matrix shows that age and education level have the largest positive associations with vaccine hesitancy. There are positive associations between age and marital status, described gender and birth gender, and sexual orientation and described gender. 
+
+```{r social-vars-cramers, out.width = "80%", fig.cap = "Association between different social variables and the response", fig.align='center', echo = FALSE}
+knitr::include_graphics("../results/social-vars-cramers.png")
+```
+
+The matrix for economic factors can be seen in Figure \@ref(fig:economic-vars-cramers). The matrix shows that the variables of having kids, having difficulty with expenses, household food sufficiency, having trouble with energy bills, and having children who attend school have the largest positive associations with vaccine hesitancy. There are strong associations between several variables related to children, including having children and receiving child tax credit, and between having children and sending children to public, private, or homeschool. There are also associations related to educational variables, such as between having children attending school and having at least one member of the household participate in summer educational catch-up activities. Finally, there are associations related to housing variables, namely between housing type and being caught up on rent or mortgage payments. 
+
+```{r economic-vars-cramers, out.width = "95%", fig.cap = "Association between different economic variables and the response", fig.align='center', echo = FALSE}
+knitr::include_graphics("../results/economic-vars-cramers.png")
+```
+The matrix for health factors can be seen in Figure \@ref(fig:health-vars-cramers). The matrix shows that the variables of having prior exposure to COVID and having a child who missed health checkups have the largest positive associations with vaccine hesitancy. There are strong associations between several variables related to mental health here, namely between feeling anxious, feeling worries, losing interest, feeling depressed, being on prescription mental health treatment, receiving mental services, or needing mental services and not receiving them. There are also strong associations between the variables regarding physical health, including seeing limitations, hearing limitations, remembering limitations, and mobility limitations. 
+
+```{r health-vars-cramers, out.width = "80%", fig.cap = "Association between different health variables and the response", fig.align='center', echo = FALSE}
+knitr::include_graphics("../results/health-vars-cramers.png")
+```
+
+The matrix for lifestyle factors can be seen in Figure \@ref(fig:lifestyle-vars-cramers). The matrix shows that the variables of working and having a child who uses telehealth have the largest positive associations with vaccine hesitancy, although they are not very strong. There are strong associations between several variables here, namely between working onsite, working from home, in store shopping, eating indoors in restaurants, having housekeeping, and having in person medical appointments.
+
+```{r lifestyle-vars-cramers, out.width = "80%", fig.cap = "Association between different lifestyle variables and the response", fig.align='center', echo = FALSE}
+knitr::include_graphics("../results/lifestyle-vars-cramers.png")
+```
 
 # Modeling
 
@@ -90,7 +124,7 @@ As my response was categorical and all my features apart from age were categoric
 
 ### Logistic regression
 
-For the first model, I decided to fit a logistic regression with all 62 features to the training data. The logistic regression revealed that the following variables are significantly associated with the response at the 0.05 level: living in specific regions (South, Midwest, and West), being of Hispanic origin, being Black or Asian, having a bachelor's or graduate degree, sexuality (LGBTQ+), having a high number of people in the household, having prior exposure to COVID or potential prior exposure, having no to little difficulty with expenses, shopping in-store, receiving and using a SNAP receipt, having no private or public health insurance, living in a mobile-style home (mobile, boat, RV, van, etc.), having higher income, having to personally take on additional care for children, having at least one child attend private school or homeschool, and age. 
+For the first model, I decided to fit a logistic regression with all 62 features to the training data. The logistic regression revealed that the following variables are significantly associated with the response at the 0.05 level: living in specific regions (South, Midwest, and West), being of Hispanic origin, being Black or Asian, having a bachelor's or graduate degree, sexuality (LGBTQ+), having a high number of people in the household, having prior exposure to COVID or potential prior exposure, having no to little difficulty with expenses, shopping in stores, receiving and using a SNAP receipt, having no private or public health insurance, living in a mobile-style home (mobile, boat, RV, van, etc.), having higher income, having to personally take on additional care for children, having at least one child attend private school or homeschool, and age. 
 
 For the logistic model, Table \@ref(tab:logistic-confusion-matrix) shows the resulting confusion matrix. The performance metrics are listed in Table \@ref(tab:logistic-evaluation), shows that the model has a misclassification error rate of 0.25. The resulting false positive rate is 0.17 and the false negative rate is 0.39, which shows that the model could have lower sensitivity and higher specificity.
 
@@ -280,7 +314,7 @@ read_tsv("../results/ct-evaluation.tsv") %>%
 
 For my last prediction method, I decided to fit a boosted model, which aggregates the outputs of multiple classification trees and utilizes them to achieve good prediction performance. 
 
-To tune the boosted model, I experimented with the number of trees and a variety of interaction depths. I found that the optimal number of trees was between 200 to 400, and I tested the interaction depths of 1, 2, 3, and 4 (all else equal). As per the CV plot seen in Figure \@ref(fig:boosted-cv-plot), I observed that the model with interaction depth 3 attains the miniumum CV error with 954 trees.
+To tune the boosted model, I experimented with the number of trees and a variety of interaction depths. I found that the optimal number of trees was between 200 to 400, and I tested the interaction depths of 1, 2, 3, and 4 (all else equal). As per the CV plot seen in Figure \@ref(fig:boosted-cv-plot), I observed that the model with interaction depth 3 attains the minimum CV error with 954 trees.
 
 ```{r boosted-cv-plot, out.width = "90%", fig.cap = "The CV error for the optimal boosted model", fig.align='center', echo = FALSE}
 knitr::include_graphics("../results/boosted-cv-plot.png")
@@ -344,7 +378,7 @@ read_tsv("../results/boosted-evaluation.tsv") %>%
 
 Table \@ref(tab:model-evaluation) shows the misclassification error, false positive rate, and false negative rate for all the methods considered. The logistic and the boosted model have the lowest misclassification errors at 0.25. I expected the boosted model to have a low misclassification error due to the boosted model's tendency to have high predictive accuracy due to its methodology of aggregating multiple trees. The superior performance of the logistic model when compared to the ridge, LASSO, and elastic net regressions suggest that bias can be a more dominant driver of test error than variance in this data. The classification tree performed the worst out of all the models, which was expected because although classification trees are easy to interpret, they can be unstable and often do not give the best prediction performance.
 
-Even with these differences in misclassification error, the methods have significant overlap in their identification of important variables. Age was the most significant variable across nearly all the models, but other variables that were selected by more than one model included having a previous diagnosis of COVID, education level, and eating indoors in restaurants. 
+Even with these differences in misclassification error, the methods have significant overlap in their identification of important variables. Age was the most significant variable across nearly all the models, but other variables that were selected by more than one model included having a previous diagnosis of COVID, education level, race, eating indoors in restaurants, and the number of children in the individual's household. 
 
 ## Takeaways
 
@@ -368,7 +402,7 @@ One of the significant limitations to my analysis was the major class imbalance 
 
 ## Follow-ups
 
-To compensate for the limitations listed above, I believe that more extensive analysis should be done as more data on vaccine hesitancy is collected. There are several ongoing data collection efforts that seek to collect a wider range of factors that can impact vaccine hesitancy. One particular study of interest is the National Immunization Survey - Adult COVID Module (NIS) that is being conducted by the National Center for Immunization and Respiratory Diseases and the National Opinion Research Center at the University of Chicago^[https://www.cdc.gov/vaccines/imz-managers/nis/about.html]. The NIS survey aims to better understand the underlying reasons why people choose to get vaccinated or not get vaccinated. The NIS is collecting data on potential variables that are important but not present in the Household Pulse Survey, such as pre-existing health issues, ease of accessing vaccination services, and the vaccination statuses of the individual's friends and family. The NIS survey is set to be completed at the end of 2021, and I believe that it would be particularly interesting to conduct an in-depth analysis on the NIS data. 
+To compensate for the limitations listed above, I believe that more extensive analysis should be done as more data on vaccine hesitancy is collected. There are several ongoing data collection efforts that seek to collect a wider range of factors that can impact vaccine hesitancy. One particular study of interest is the National Immunization Survey - Adult COVID Module (NIS) that is being conducted by the National Center for Immunization and Respiratory Diseases and the National Opinion Research Center at the University of Chicago^[https://www.cdc.gov/vaccines/imz-managers/nis/about.html]. The NIS survey aims to better understand the underlying reasons why people choose to get vaccinated or not get vaccinated. The NIS is collecting data on potential variables that are important but not present in the Household Pulse Survey, such as pre-existing health issues, ease of accessing vaccination services, and the vaccination statuses of the individual's friends and family. The NIS survey is set to be completed at the end of 2021, and I believe that it would be particularly interesting to conduct an in-depth analysis on the NIS data. Another analysis that would be interesting is looking at what factors drive vaccine hesitancy in other countries. 
 
 \appendix
 
@@ -439,7 +473,7 @@ Below are the 62 features that I used for analysis. Words written in parentheses
   - Anxiety (`anxious`): Denotes the individual's frequency of anxiety over previous 2 weeks. 1 indicates no anxiety, 2 indicates having anxiety for several days, 3 indicates having anxiety for more than half the days, 4 indicates having anxiety nearly every day, -99 indicates question seen but category not selected, -88 indicates missing or id not report.
   - Worry (`worry`): Denotes the individual's frequency of worry over previous 2 weeks. 1 indicates not being worried, 2 indicates being worried for several days, 3 indicates being worried for more than half the days, 4 indicates being worried nearly every day, -99 indicates question seen but category not selected, -88 indicates missing or id not report.
   - Losing interest (`interest`): Denotes the individual's frequency of having little interest in things over previous 2 weeks. 1 indicates no loss of interest, 2 indicates having little interest for several days, 3 indicates having little interest for more than half the days, 4 indicates having little interest nearly every day, -99 indicates question seen but category not selected, -88 indicates missing or id not report.
-  - Depression (`down`): Denotes the individual's frequency of feeling depressed over previous 2 weeks. 1 indicates no feelings of depression, 2 indicates having feelings of depression for several days, 3 indicates having feelings of depression for more than half the days, 4 indicates having feelings of depression nearly every day, -99 indicates question seen but category not selected, -88 indicates missing or id not report.
+  - Depression (`depressed`): Denotes the individual's frequency of feeling depressed over previous 2 weeks. 1 indicates no feelings of depression, 2 indicates having feelings of depression for several days, 3 indicates having feelings of depression for more than half the days, 4 indicates having feelings of depression nearly every day, -99 indicates question seen but category not selected, -88 indicates missing or id not report.
 - *Mental health*
   - Prescription medication for mental health (`prescription_mental_health`): Usage of prescription medication within the past 4 weeks. 1 indicates yes, 2 indicates no, -99 is question seen but category not selected, -88 is missing or did not report.
   - Mental health services (`mental_health_services`): Indicator of receiving counseling or therapy from a mental health professional within the past 4 weeks. 1 indicates yes, 2 indicates no, -99 is question seen but category not selected, -88 is missing or did not report.

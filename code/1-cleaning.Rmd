@@ -6,19 +6,10 @@ output:
 ---
 
 ```{r, message = FALSE}
-library(kableExtra)                     # for printing tables
-library(cowplot)                        # for side by side plots
-library(glmnetUtils)                    # to run ridge and lasso
-library(tidyverse)                      # for everything else
-library(naniar)                         # for replace NA 
-library(rpart)
-library(rpart.plot)
-library(randomForest)
-library(gbm)
+# import libraries
+library(kableExtra)
 library(tidyverse)
-library(nnet)
-library(pROC)
-library(creditmodel)
+library(naniar)
 ```
 
 ```{r}
@@ -28,6 +19,7 @@ vh_data_raw = read_tsv(file = "../data/raw/vh_data_raw.tsv")
 
 
 ```{r}
+# construct clean dataset
 vh_data <-
   vh_data_raw %>%
   # consolidate and reduce levels in several variables

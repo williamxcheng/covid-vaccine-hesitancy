@@ -6,12 +6,16 @@ output:
 ---
 
 ```{r}
+# import libraries
 library(kableExtra)
 library(tidyverse)
+library(corrplot) 
+library(DescTools)
 
 # read in the cleaned data
 vh_train = read_tsv("../data/clean/vh_train.tsv")
 
+# set the datatypes of specific variables as factors
 cols = c("region", "hispanic", "race", "education_level", "marital_status", 
          "birth_gender", "described_gender", "sexual_orientation", "had_covid", 
          "recent_work_loss", "employment", "child_tax_credit", 
@@ -34,12 +38,11 @@ cols = c("region", "hispanic", "race", "education_level", "marital_status",
          "children_public_school", "children_private_school", 
          "children_homeschool", "post_secondary_classes", "vaccine_hesitancy"
          )
-  
 vh_train <-
   vh_train %>%
        mutate_each_(funs(factor(.)), cols)
 
-# breakdown of vaccination intention responses in this data
+# breakdown of vaccination hesitancy responses in this data
 intention_breakdown_table <-
   vh_train %>%
   count(vaccine_hesitancy) %>%
@@ -49,8 +52,8 @@ intention_breakdown_table <-
                names_to = "response", values_to = "count") %>%
   write_tsv("../results/response-breakdown.tsv")
 
+# create bar graph of vaccination hesitancy
 positions <- c("Yes", "No")
-
 p <- intention_breakdown_table %>%
   ggplot(aes(x = response, y = count)) + 
   geom_bar(stat='identity') +
@@ -59,12 +62,165 @@ p <- intention_breakdown_table %>%
   theme_bw() +
   theme(plot.title = element_text(hjust = 0.5))
 
-# save the histogram
-ggsave(filename = "../results/response-histogram.png", 
+# save the bar graph
+ggsave(filename = "../results/response-bar.png", 
        plot = p, 
        device = "png", 
        width = 5, 
        height = 3)
+```
+```{r}
+# subset numerical variables and create correlation matrix
+numerical_subset <-
+  vh_train %>%
+  select(age, number_kids_household, number_adults_household)
+res <- cor(numerical_subset)
+
+# save correlation matrix
+png(width = 6, 
+    height = 4,
+    res = 300,
+    units = "in", 
+    filename = "../results/num-corr-plot.png")
+corrplot(res, type = "upper", 
+         order = "hclust", 
+         tl.col = "black", 
+         tl.srt = 45)
+dev.off()
+
+# create boxplot with age versus response
+age_hesitancy_box <-
+  vh_train %>%
+  select(age, vaccine_hesitancy) %>%
+  ggplot() +
+  geom_boxplot(aes(x = vaccine_hesitancy, y = age)) + 
+  labs(x = "vaccine_hesitancy", y = "age") + 
+  ggtitle("Hesitancy vs. Age") +
+  theme(plot.title = element_text(hjust = 0.5))
+
+# create boxplot with number of children versus response
+num_child_hesitancy_box <-
+  vh_train %>%
+  select(number_kids_household, vaccine_hesitancy) %>%
+  ggplot() +
+  geom_boxplot(aes(x = vaccine_hesitancy, y = number_kids_household)) + 
+  labs(x = "vaccine_hesitancy", y = "number_kids_household") + 
+  ggtitle("Hesitancy vs. Number of Kids") +
+  theme(plot.title = element_text(hjust = 0.5))
+
+# create boxplot with number of adults versus response
+num_adults_hesitancy_box <-
+  vh_train %>%
+  select(number_adults_household, vaccine_hesitancy) %>%
+  ggplot() +
+  geom_boxplot(aes(x = vaccine_hesitancy, y = number_adults_household)) + 
+  labs(x = "vaccine_hesitancy", y = "number_adults_household") + 
+  ggtitle("Hesitancy vs. Number of Adults") +
+  theme(plot.title = element_text(hjust = 0.5))
+
+# save boxplot grid
+png(width = 6, 
+    height = 4,
+    res = 300,
+    units = "in", 
+    filename = "../results/feature-boxplots.png")
+plot_grid(age_hesitancy_box, num_child_hesitancy_box, num_adults_hesitancy_box)
+dev.off()
+
+# select columns for social variables and response
+social_cols = c("region", "race", "hispanic", "education_level", 
+                "marital_status", "birth_gender", "described_gender", 
+                "sexual_orientation", "age", "vaccine_hesitancy")
+social_factor_vars <- 
+  vh_train %>%
+  select(all_of(social_cols))
+
+# apply Cramer's V to social variables and response
+png(width = 6, 
+    height = 4,
+    res = 300,
+    units = "in", 
+    filename = "../results/social-vars-cramers.png")
+corrplot::corrplot(DescTools::PairApply(social_factor_vars, 
+                                        DescTools::CramerV),
+                   tl.cex = 0.65,
+                   tl.col = "black")
+dev.off()
+
+# select columns for economic variables and response
+economic_cols = c("kids", "number_adults_household", "pandemic_child_impact", 
+                "recent_work_loss", "employment", "active_duty", 
+                "essential_worker", "child_tax_credit", 
+                "difficulty_with_expenses", "household_food_sufficiency",
+                "household_free_food", "snap_receipt", "energy_pay_trouble",
+                "housing_unsafe_temp", "income", "summer_educational_catch_up",
+                "post_sec_edu_plan_changes", "children_public_school", 
+                "children_private_school", "children_homeschool", 
+                "post_secondary_classes", "housing_owned_rented", 
+                "building_type", "rent_caught_up", "mortgage_caught_up", 
+                "housing_pay_confidence", "rent_assistance_apply",
+                "eviction_likelihood", "foreclose_likelihood", 
+                "private_health_insurance", "public_health_insurance",
+                "vaccine_hesitancy")
+economic_factor_vars <- 
+  vh_train %>%
+  select(all_of(economic_cols))
+
+# apply Cramer's V to economic variables and response
+png(width = 6, 
+    height = 4,
+    res = 300,
+    units = "in", 
+    filename = "../results/economic-vars-cramers.png")
+corrplot::corrplot(DescTools::PairApply(economic_factor_vars, 
+                                        DescTools::CramerV),
+                   tl.cex = 0.5,
+                   tl.col = "black")
+dev.off()
+
+# select columns for health variables and response
+health_cols = c("had_covid", "anxious", "worry", "interest", "depressed", 
+                "prescription_mental_health", "mental_health_services",
+                "mental_health_not_get", "child_missed_checkups", 
+                "seeing_limitations", "hearing_limitations", 
+                "remembering_limitations", "mobility_limitations",
+                "vaccine_hesitancy")
+health_factor_vars <- 
+  vh_train %>%
+  select(all_of(health_cols))
+
+# apply Cramer's V to health variables and response
+png(width = 6, 
+    height = 4,
+    res = 300,
+    units = "in", 
+    filename = "../results/health-vars-cramers.png")
+corrplot::corrplot(DescTools::PairApply(health_factor_vars, 
+                                        DescTools::CramerV), 
+                   tl.cex = 0.65,
+                   tl.col = "black")
+dev.off()
+
+# select columns for lifestyle variables and response
+lifestyle_cols = c("work_onsite", "work_from_home", "in_store_shopping",
+                   "eating_indoors_restaurants", "in_home_housekeeping",
+                   "in_person_medical_appointments", "telehealth_personal",
+                   "telehealth_child", "vaccine_hesitancy")
+lifestyle_factor_vars <- 
+  vh_train %>%
+  select(all_of(lifestyle_cols))
+
+# apply Cramer's V to lifestyle variables and response
+png(width = 6, 
+    height = 4,
+    res = 300,
+    units = "in", 
+    filename = "../results/lifestyle-vars-cramers.png")
+corrplot::corrplot(DescTools::PairApply(lifestyle_factor_vars, 
+                                        DescTools::CramerV), 
+                   tl.cex = 0.65,
+                   tl.col = "black")
+dev.off()
 ```
 
 
