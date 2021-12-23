@@ -22,11 +22,11 @@ library(pROC)
 source("../code/functions/plot_glmnet.R")
 ```
 
-
 ```{r}
 # load test data
 vh_test = read_tsv("../data/clean/vh_test.tsv")
 
+# convert specific features to factor type
 cols = c("region", "hispanic", "race", "education_level", "marital_status",
          "birth_gender", "described_gender", "sexual_orientation", "had_covid",
          "recent_work_loss", "employment", "child_tax_credit",
@@ -49,22 +49,9 @@ cols = c("region", "hispanic", "race", "education_level", "marital_status",
          "children_public_school", "children_private_school",
          "children_homeschool", "post_secondary_classes", "vaccine_hesitancy"
          )
-
 vh_test <-
   vh_test %>%
        mutate_each_(funs(factor(.)), cols)
-
-intention_breakdown_table <-
-  vh_test %>%
-  count(vaccine_hesitancy) %>%
-  pivot_wider(names_from = vaccine_hesitancy, values_from = n) %>%
-  summarise(No = `0`, Yes = `1`) %>%
-  pivot_longer(c(`Yes`, `No`), 
-               names_to = "response", values_to = "count")
-
-vh_test %>%
-  select(vaccine_hesitancy) %>%
-  summarise()
 ```
 
 
@@ -94,10 +81,11 @@ load("../results/optimal_boosted_fit.Rda")
 logistic_fitted_probabilities = predict(glm_fit,
                                         newdata = vh_test,
                                         type = "response") 
-# threshold
+
+# apply standard 0.5 threshold
 logistic_fit_predictions = as.numeric(logistic_fitted_probabilities > 0.5)
 
-# add new predictions column to test
+# add column of new predictions to test
 logistic_test = 
   vh_test %>%
   mutate(predicted_hesitancy = logistic_fit_predictions)
@@ -107,7 +95,6 @@ logistic_test
 logistic_misclassification_rate <-
   logistic_test %>%
   summarise(mean(vaccine_hesitancy != predicted_hesitancy))
-
 logistic_misclassification_rate <- as.numeric(logistic_misclassification_rate)
 
 # calculate and save confusion matrix for logistic model
@@ -155,16 +142,17 @@ tibble(Metric = c("Misclassification Error",
 
 # Ridge
 ```{r}
-# evaluate ridge
+# evaluate ridge model
 ridge_probabilities = predict(ridge_fit,
                         newdata = vh_test,
                         s = "lambda.1se",
                         type = "response") %>%
   as.numeric()
-# ridge threshold
+
+# apply standard 0.5 threshold
 ridge_fit_predictions = as.numeric(ridge_probabilities > 0.5)
 
-# add new predictions column to test
+# add column of new predictions to test
 ridge_test = 
   vh_test %>%
   mutate(predicted_hesitancy = ridge_fit_predictions)
@@ -174,7 +162,6 @@ ridge_test
 ridge_misclassification_rate <-
   ridge_test %>%
   summarise(mean(vaccine_hesitancy != predicted_hesitancy))
-
 ridge_misclassification_rate <- as.numeric(ridge_misclassification_rate)
 
 # calculate confusion matrix for ridge model
@@ -229,10 +216,10 @@ lasso_probabilities = predict(lasso_fit,
                         type = "response") %>%
   as.numeric()
 
-# lasso threshold
+# apply standard 0.5 threshold
 lasso_fit_predictions = as.numeric(lasso_probabilities > 0.5)
 
-# add new predictions column to test
+# add column of new predictions to test
 lasso_test = 
   vh_test %>%
   mutate(predicted_hesitancy = lasso_fit_predictions)
@@ -242,7 +229,6 @@ lasso_test
 lasso_misclassification_rate <-
   lasso_test %>%
   summarise(mean(vaccine_hesitancy != predicted_hesitancy))
-
 lasso_misclassification_rate <- as.numeric(lasso_misclassification_rate)
 
 # calculate confusion matrix for lasso model
@@ -296,10 +282,10 @@ elnet_probabilities = predict(elnet_fit,
                               newdata = vh_test, s = "lambda.1se") %>% 
   as.numeric()
 
-# apply threshold
+# apply standard 0.5 threshold
 elnet_fit_predictions = as.numeric(elnet_probabilities > 0.5)
 
-# add new predictions column to test
+# add new column of predictions to test
 elnet_test = 
   vh_test %>%
   mutate(predicted_hesitancy = elnet_fit_predictions)
@@ -308,7 +294,6 @@ elnet_test =
 elnet_misclassification_rate <-
   elnet_test %>%
   summarise(mean(vaccine_hesitancy != predicted_hesitancy))
-
 elnet_misclassification_rate <- as.numeric(elnet_misclassification_rate)
 
 # calculate elastic net confusion matrix
@@ -361,6 +346,7 @@ tibble(Metric = c("Misclassification Error",
 optimal_tree_prediction = 
   predict(optimal_tree_fit, newdata = vh_test, type = "class")
 
+# add column of new predictions to test
 ct_test = 
   vh_test %>%
   mutate(predicted_hesitancy = optimal_tree_prediction)
@@ -417,27 +403,28 @@ tibble(Metric = c("Misclassification Error",
 
 # Boosted 
 ```{r}
+# evaluate boosted
 boosted_probabilities = predict(
   boosted_fit_optimal, 
   n.trees = 222,
   type = "response", 
   newdata = vh_test)
-boosted_probabilities
 
+# apply standard 0.5 threshold
 boosted_predictions = as.numeric(boosted_probabilities > 0.5)
 
+# add column of new predictions to test
 boosted_test = 
   vh_test %>%
   mutate(predicted_hesitancy = boosted_predictions)
 
-# calculate misclassification rate for elastic net model
+# calculate misclassification rate for boosted model
 boosted_misclassification_rate <-
   boosted_test %>%
   summarise(mean(vaccine_hesitancy != predicted_hesitancy))
-
 boosted_misclassification_rate <- as.numeric(boosted_misclassification_rate)
 
-# calculate elastic net confusion matrix
+# calculate boosted confusion matrix
 boosted_confusion_matrix <-
   boosted_test %>%
   select(vaccine_hesitancy, predicted_hesitancy) %>%
@@ -445,7 +432,7 @@ boosted_confusion_matrix <-
 save(boosted_confusion_matrix, 
      file = "../results/boosted-confusion-matrix.RData")
 
-# calculate false positive rate for boosted fit
+# calculate false positive rate for boosted
 boosted_false_positives = 
   boosted_test %>% 
   select(vaccine_hesitancy, predicted_hesitancy) %>%
@@ -458,7 +445,7 @@ boosted_actual_negatives =
   nrow()
 boosted_fp_rate = boosted_false_positives / boosted_actual_negatives
 
-# calculate false negative rate for boosted fit
+# calculate false negative rate for boosted
 boosted_false_negatives = 
   boosted_test %>% 
   select(vaccine_hesitancy, predicted_hesitancy) %>%
@@ -481,81 +468,9 @@ tibble(Metric = c("Misclassification Error",
    write_tsv("../results/boosted-evaluation.tsv")
 ```
 
-
-# Random Forest
+# Summary of performance
 ```{r}
-# # evaluate decision tree
-# optimal_rf_prediction = 
-#   predict(rf_fit_tuned, newdata = vh_test, type = "class")
-# 
-# rf_test = 
-#   vh_test %>%
-#   mutate(predicted_hesitancy = optimal_rf_prediction)
-# 
-# # calculate misclassification rate for random forest
-# rf_misclassification_rate <-
-#   rf_test %>%
-#   summarise(mean(vaccine_hesitancy != predicted_hesitancy))
-# rf_misclassification_rate <- as.numeric(rf_misclassification_rate)
-# 
-# # calculate random forest confusion matrix
-# rf_confusion_matrix <-
-#   rf_test %>%
-#   select(vaccine_hesitancy, predicted_hesitancy) %>%
-#   table()
-# save(rf_confusion_matrix, 
-#      file = "../results/rf-confusion-matrix.RData")
-# 
-# # calculate false positive rate for random forest
-# rf_false_positives = 
-#   rf_test %>% 
-#   select(vaccine_hesitancy, predicted_hesitancy) %>%
-#   filter(vaccine_hesitancy == 0 & predicted_hesitancy == 1) %>% 
-#   nrow()
-# rf_actual_negatives = 
-#   rf_test %>% 
-#   select(vaccine_hesitancy, predicted_hesitancy) %>%
-#   filter(vaccine_hesitancy == 0) %>% 
-#   nrow()
-# rf_fp_rate = rf_false_positives / rf_actual_negatives
-# 
-# # calculate false negative rate for decision tree
-# rf_false_negatives = 
-#   rf_test %>% 
-#   select(vaccine_hesitancy, predicted_hesitancy) %>%
-#   filter(vaccine_hesitancy == 1 & predicted_hesitancy == 0) %>% 
-#   nrow()
-# rf_actual_positives = 
-#   rf_test %>% 
-#   select(vaccine_hesitancy, predicted_hesitancy) %>%
-#   filter(vaccine_hesitancy == 1) %>% nrow()
-# rf_fn_rate = rf_false_negatives / rf_actual_positives
-# 
-# # summarize performance metrics for decision tree
-# tibble(Metric = c("Misclassification Error", 
-#                   "False Positive Rate", 
-#                   "False Negative Rate"),
-#         `Classifier Performance` = 
-#          c(rf_misclassification_rate, 
-#            rf_fp_rate,
-#            rf_fn_rate)) %>%
-#    write_tsv("../results/rf-evaluation.tsv")
-# 
-# # optimal_rf_prediction = 
-# #   predict(rf_fit_tuned, newdata = vh_test, type = "class")
-# # 
-# # rf_misclassification_rate <-
-# #   mean(optimal_rf_prediction != vh_test$vaccine_hesitancy)
-# # 
-# # rf_misclassification_rate <- as.numeric(rf_misclassification_rate)
-# # 
-# # rf_confusion_matrix <-
-# #   table(optimal_rf_prediction, truth = vh_test$vaccine_hesitancy)
-```
-
-# Summary of Performance
-```{r}
-# print nice table
+# print summary table
 tibble(Method = c("Logistic", "Ridge", "LASSO", "Elastic Net", 
                   "Classification Tree", "Boosted"),
         `Misclassification Error` = 
@@ -581,52 +496,3 @@ tibble(Method = c("Logistic", "Ridge", "LASSO", "Elastic Net",
            boosted_fn_rate)) %>%
    write_tsv("../results/model-evaluation.tsv")
 ```
-
-```{r}
-#ridge_predictions = predict(ridge_fit, 
-#                             newdata = vh_test, 
-#                             s = "lambda.1se") %>%
-#   as.numeric()
-# ridge_RMSE = sqrt(mean((ridge_predictions-vh_test$vaccine_hesitancy)^2))
-# 
-# # evaluate lasso RMSE
-# lasso_predictions = predict(lasso_fit, 
-#                             newdata = vh_test, 
-#                             s = "lambda.1se") %>%
-#   as.numeric()
-# lasso_RMSE = sqrt(mean((lasso_predictions-vh_test$vaccine_hesitancy)^2))
-# 
-# # evaluate elastic net RMSE
-# elnet_predictions = predict(elnet_fit, 
-#                             alpha = elnet_fit$alpha,
-#                             newdata = vh_test, 
-#                             s = "lambda.1se") %>%
-#   as.numeric()
-# elnet_RMSE = sqrt(mean((elnet_predictions-vh_test$vaccine_hesitancy)^2))
-# 
-# # regression tree
-# regression_tree_predictions = predict(regression_tree_fit, newdata = vh_test)
-# Y = vh_test$vaccine_hesitancy
-# Y_hat_1 = pred_1
-# rt_RMSE = sqrt(mean((Y - Y_hat_1)^2))
-# rt_results = tibble(Y = vh_test$vaccine_hesitancy, Y_hat_1 = pred_1)
-# rt_results %>% summarise(`regression_tree RMSE` = sqrt(mean((Y - Y_hat_1)^2)))
-# 
-# # print nice table
-# tibble(Method = c("Linear", "Ridge", "LASSO", "Elastic Net", "RT_RMSE"),
-#        `Test RMSE` = c(linear_RMSE, ridge_RMSE, lasso_RMSE, elnet_RMSE, rt_RMSE)) %>%
-#   write_tsv("results/model-evaluation.tsv")
-# 
-# # change vaccine_hesitancy to factor
-# #vh_test$vaccine_hesitancy <- as.factor(vh_test$vaccine_hesitancy)
-# 
-# # evaluate multinomial RMSE
-# #multinomial_predictions = predict(multinomial_fit, 
-# #                            newdata = vh_test, 
-# #                            type = "class") %>%
-# #  as.numeric()
-# #multinomial_RMSE = sqrt(mean((multinomial_predictions-vh_test$vaccine_hesitancy)^2))
-# 
-# # evaluate regression tree
-```
-

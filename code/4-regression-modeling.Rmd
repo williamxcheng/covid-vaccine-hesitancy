@@ -18,12 +18,12 @@ library(gbm)
 library(tidyverse)
 library(nnet)
 library(pROC)
-library(creditmodel)
 source("../code/functions/plot_glmnet.R")            # for lasso/ridge trace plots
 
 # read in the training data
 vh_train = read_tsv("../data/clean/vh_train.tsv")
 
+# convert specific features to factor type
 cols = c("region", "hispanic", "race", "education_level", "marital_status", 
          "birth_gender", "described_gender", "sexual_orientation", "had_covid", 
          "recent_work_loss", "employment", "child_tax_credit", 
@@ -46,7 +46,6 @@ cols = c("region", "hispanic", "race", "education_level", "marital_status",
          "children_public_school", "children_private_school", 
          "children_homeschool", "post_secondary_classes", "vaccine_hesitancy"
          )
-  
 vh_train <-
   vh_train %>%
        mutate_each_(funs(factor(.)), cols)
@@ -64,16 +63,9 @@ glm_fit = glm(vaccine_hesitancy ~.,
 # save the logistic fit object
 save(glm_fit, file = "../results/glm_fit.Rda")
 
+# print summary of logistic fit object
 summary(glm_fit)
-
-# extract features selected by logistic fit and their coefficients
-# beta_hat_std = extract_std_coefs(glm_fit, vh_train)
-# beta_hat_std %>%
-#    filter(coefficient != 0) %>%
-#    arrange(desc(abs(coefficient))) %>% 
-#    write_tsv("../results/logistic-features-table.tsv")
 ```
-
 # Ridge Regression
 
 ```{r}
@@ -153,10 +145,6 @@ beta_hat_std %>%
   arrange(desc(abs(coefficient))) %>% 
   head(10) %>%
   write_tsv("../results/lasso-features-table.tsv")
-
-num_features = lasso_fit$nzero[lasso_fit$lambda == lasso_fit$lambda.1se]
-sprintf("The number of features (excluding intercept) selected (1se): %i",
-        num_features)
 ```
 
 # Elastic Net Regression

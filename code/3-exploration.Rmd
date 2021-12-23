@@ -68,8 +68,7 @@ ggsave(filename = "../results/response-bar.png",
        device = "png", 
        width = 5, 
        height = 3)
-```
-```{r}
+
 # subset numerical variables and create correlation matrix
 numerical_subset <-
   vh_train %>%
